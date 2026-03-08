@@ -1,1 +1,0 @@
-uvicorn crags.main:app --reload --app-dir src
