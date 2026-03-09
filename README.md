@@ -163,7 +163,7 @@ Ensure the following software is installed.
 # 5.2 Clone Repository
 
 ```id="u2u3q6"
-git clone <repository-url>
+git clone [<repository-url>](https://github.com/kushagrathisside/crags)
 cd crags
 ```
 
