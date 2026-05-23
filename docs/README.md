@@ -6,14 +6,11 @@ bookings, enforcing group policy, and auditing scheduling decisions.
 
 ## Start Here
 
-- [Local Development](./local-development.md): run the stack, configure `.env`,
-  and use backend/frontend development commands.
-- [Architecture](./architecture.md): service layout, backend modules, frontend
-  structure, auth, data model, and scheduling behavior.
-- [API Reference](./api-reference.md): current REST endpoints, request payloads,
-  response shapes, and permission notes.
-- [Operations](./operations.md): Docker Compose actions, health checks, migrations,
-  environment variables, and troubleshooting.
+- **New User?** Start with [User Manual](./UserManual.md): how to log in, request bookings, manage your team, and understand resource allocation.
+- [Local Development](./local-development.md): run the stack, configure `.env`, and use backend/frontend development commands.
+- [Architecture](./architecture.md): service layout, backend modules, frontend structure, auth, data model, and scheduling behavior.
+- [API Reference](./api-reference.md): current REST endpoints, request payloads, response shapes, and permission notes.
+- [Operations](./operations.md): Docker Compose actions, health checks, migrations, environment variables, and troubleshooting.
 
 ## Quick Links
 
@@ -23,6 +20,16 @@ When running with the default Docker workflow:
 - Backend API: `http://localhost:8000`
 - OpenAPI docs: `http://localhost:8000/docs`
 - Health check: `http://localhost:8000/healthz`
+
+## Documentation Structure
+
+| Document | Audience | Purpose |
+|----------|----------|---------|
+| [UserManual.md](./UserManual.md) | End users | How to use CRAGS: login, bookings, team management, audit trail |
+| [local-development.md](./local-development.md) | Developers | Set up development environment, run the stack locally |
+| [Architecture](./architecture.md) | Developers | System design, service topology, module responsibilities |
+| [API Reference](./api-reference.md) | Backend developers | REST endpoints, authentication, request/response formats |
+| [Operations](./operations.md) | DevOps / Admins | Docker Compose runbook, health checks, troubleshooting |
 
 ## Repository Layout
 

@@ -1,302 +1,144 @@
 # CRAGS
 
-## Compute Resource Allocation and Governance System
+**Compute Resource Allocation and Governance System**
 
-CRAGS is a platform designed to manage, schedule, and audit institutional compute resources such as GPU servers, CPU clusters, and other shared computational infrastructure.
+CRAGS is a full-stack platform for managing, scheduling, and auditing institutional compute resources (GPUs, CPUs, and shared computational infrastructure). It enables research groups to reserve resources fairly while maintaining transparency and institutional oversight.
 
-The system enables research groups to reserve compute resources while maintaining fairness, transparency, and governance over resource consumption.
+## Features
 
-CRAGS provides:
+- **Resource Scheduling**: Book GPU/CPU clusters with conflict prevention
+- **Fair Allocation**: Enforce group quotas and usage limits
+- **Prioritization**: Support foreground and background workload prioritization
+- **Governance**: Comprehensive audit logging of all resource decisions
+- **User Interface**: Modern web UI for system management and booking
+- **Explainable Decisions**: Clear feedback on scheduling conflicts
 
-* A scheduling system for shared compute infrastructure
-* Resource booking with conflict prevention
-* Foreground and background execution prioritization
-* Governance and auditing mechanisms for resource usage
-* A web-based interface for managing systems and bookings
+## Quick Start
 
-The project is designed for academic environments where multiple research groups share limited compute resources.
+### Prerequisites
 
----
+- Docker and Docker Compose (recommended)
+- OR: Python 3.10+, Node.js 18+, PostgreSQL
 
-# 1. System Architecture
+### Docker (Recommended)
 
-CRAGS follows a modern web architecture.
-
-```id="y1q0n6"
-Frontend (React + Vite)
-        │
-        ▼
-Backend API (FastAPI)
-        │
-        ▼
-Database (PostgreSQL)
-```
-
-### Frontend
-
-The frontend provides the user interface through which users can:
-
-* View compute systems
-* Schedule bookings
-* Monitor resource allocations
-* Interact with governance features
-
-### Backend
-
-The backend implements the core scheduling and governance logic.
-
-Responsibilities include:
-
-* resource management
-* scheduling conflict prevention
-* authentication and authorization
-* audit tracking
-
-### Database
-
-PostgreSQL stores:
-
-* system definitions
-* booking records
-* user and group information
-* audit logs
-* scheduling constraints
-
----
-
-# 2. Repository Structure
-
-```id="8o5z1x"
-crags/
-│
-├── backend/        FastAPI backend service
-│
-├── frontend/       React web application
-│
-├── docker-compose.yml
-│
-├── LICENSE
-└── README.md
-```
-
----
-
-# 3. Backend Overview
-
-Backend technology stack:
-
-| Component     | Technology |
-| ------------- | ---------- |
-| API framework | FastAPI    |
-| Language      | Python     |
-| Database      | PostgreSQL |
-| ORM           | SQLAlchemy |
-| Migrations    | Alembic    |
-
-Backend modules include:
-
-```id="ohg6ng"
-IAM          Authentication and identity management
-Resources    Compute system management
-Scheduling   Resource booking engine
-Audit        Resource usage tracking
-```
-
-Detailed backend documentation is available in:
-
-```
-backend/README.md
-```
-
----
-
-# 4. Frontend Overview
-
-Frontend technology stack:
-
-| Component       | Technology |
-| --------------- | ---------- |
-| Framework       | React      |
-| Language        | TypeScript |
-| Build tool      | Vite       |
-| Package manager | npm        |
-
-The frontend provides:
-
-* system inventory interface
-* booking interface
-* scheduling visualization
-* governance dashboards
-
-Detailed frontend documentation is available in:
-
-```
-frontend/README.md
-```
-
----
-
-# 5. Setup Instructions
-
-This section explains how to run CRAGS locally for development.
-
----
-
-# 5.1 Prerequisites
-
-Ensure the following software is installed.
-
-### Required
-
-* Python 3.10+
-* Node.js (18+ recommended)
-* npm
-* PostgreSQL
-
-### Optional
-
-* Docker
-* DBeaver (for database inspection)
-
----
-
-# 5.2 Clone Repository
-
-```id="u2u3q6"
-git clone [https://github.com/kushagrathisside/crags](https://github.com/kushagrathisside/crags)
+```bash
+# Clone and setup environment
+git clone https://github.com/kushagrathisside/crags
 cd crags
+cp .env.example .env
+
+# Edit .env: set JWT_SECRET_KEY and SUPERADMIN_PASSWORD
+
+# Run the full stack
+docker compose up --build
 ```
 
----
+Access the application at:
+- **Frontend**: `http://localhost:5173`
+- **Backend API**: `http://localhost:8000`
+- **API Docs**: `http://localhost:8000/docs`
 
-# 5.3 Database Setup
+### Local Development
 
-Create a PostgreSQL database and user.
+For detailed local development setup without Docker, see [Local Development](./docs/local-development.md).
 
-Example:
+## Documentation
 
-```id="dy0qzn"
-CREATE USER crags_user WITH PASSWORD 'strongpassword';
-CREATE DATABASE crags_db OWNER crags_user;
+| Guide | Purpose |
+|-------|---------|
+| [Local Development](./docs/local-development.md) | Setup, prerequisites, environment configuration |
+| [Architecture](./docs/architecture.md) | System design, backend modules, frontend structure, data model |
+| [API Reference](./docs/api-reference.md) | REST endpoints, authentication, request/response formats |
+| [Operations](./docs/operations.md) | Docker Compose runbook, health checks, troubleshooting |
+| [User Manual](./docs/UserManual.md) | End-user guide for using CRAGS |
+
+## Repository Structure
+
+```
+crags/
+├── backend/             FastAPI service, SQLAlchemy ORM, Alembic migrations
+├── frontend/            React + TypeScript, Vite, UI components and hooks
+├── docs/                Project documentation
+├── docker-compose.yml   Local orchestration (PostgreSQL, backend, frontend)
+├── run.sh               Convenient Docker Compose wrapper
+└── README.md            This file
 ```
 
-Update backend database configuration accordingly.
+## Technology Stack
 
----
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | React, TypeScript, Vite, React Query, MUI |
+| **Backend** | FastAPI, Python 3.10+, SQLAlchemy ORM |
+| **Database** | PostgreSQL 15 with Alembic migrations |
+| **Deployment** | Docker Compose with Nginx reverse proxy |
 
-# 5.4 Backend Setup
+## Backend Modules
 
-Navigate to the backend directory.
+| Module | Responsibility |
+|--------|----------------|
+| **IAM** | Authentication, users, groups, roles, quotas |
+| **Resources** | Compute system registration and inventory |
+| **Scheduling** | Booking lifecycle, availability, conflict detection |
+| **Audit** | Audit logging and usage tracking |
 
-```id="j6v6av"
-cd backend
+## Backend Module Documentation
+
+Detailed backend architecture is available in [backend/README_backend.md](./backend/README_backend.md).  
+Detailed frontend architecture is available in [frontend/README_frontend.md](./frontend/README_frontend.md).
+
+## Development Workflow
+
+```bash
+# Terminal 1: Start the full stack
+docker compose up --build
+
+# The application automatically includes PostgreSQL, migrations, backend, and frontend
 ```
 
-Create virtual environment.
+For backend-only or frontend-only development:
+- **Backend only**: See [Local Development - Backend](./docs/local-development.md#backend-only)
+- **Frontend only**: See [Local Development - Frontend](./docs/local-development.md#frontend-only)
 
-```id="e8c7f6"
-python -m venv venv
-source venv/bin/activate
+## Common Commands
+
+```bash
+# Start full stack in foreground
+./run.sh up
+
+# Start detached
+./run.sh upd
+
+# View logs
+./run.sh logs
+
+# Stop services
+./run.sh down
+
+# Reset database
+./run.sh reset
 ```
 
-Install dependencies.
+Or use Docker Compose directly:
 
-```id="s3zjkn"
-pip install -e .
+```bash
+docker compose up --build
+docker compose down
+docker compose ps
 ```
 
----
+## Default Credentials
 
-# 5.5 Run Database Migrations
+The system creates a superadmin on startup when `SUPERADMIN_PASSWORD` is set in `.env`:
 
-Apply all schema migrations.
+- **Username**: `superadmin`
+- **Email**: `superadmin@crags.local`
+- **Password**: Value from `SUPERADMIN_PASSWORD` in `.env`
 
-```id="fj43b3"
-alembic upgrade head
-```
+## License
 
----
-
-# 5.6 Start Backend Server
-
-Run the backend service.
-
-```id="7ihk1q"
-./run.sh
-```
-
-or
-
-```id="6d1grd"
-uvicorn src.crags.main:app --reload
-```
-
-The backend API will be available at:
-
-```id="r6n7s3"
-http://localhost:8000
-```
-
-API documentation:
-
-```id="h35h5m"
-http://localhost:8000/docs
-```
-
----
-
-# 5.7 Frontend Setup
-
-Navigate to the frontend directory.
-
-```id="3p2q7x"
-cd ../frontend
-```
-
-Install dependencies.
-
-```id="ydsuhg"
-npm install
-```
-
----
-
-# 5.8 Run Frontend Development Server
-
-Start the frontend.
-
-```id="0m4fqs"
-npm run dev
-```
-
-The application will be available at:
-
-```id="1hkgx9"
-http://localhost:5173
-```
-
----
-
-# 6. Development Workflow
-
-Recommended development process:
-
-1. Start PostgreSQL
-2. Run backend server
-3. Run frontend development server
-4. Implement features in backend modules
-5. Connect frontend components to APIs
-6. Validate through browser
-
----
-
-# 7. Scheduling System Design
-
-CRAGS scheduling engine ensures:
-
-* bookings cannot overlap improperly
-* compute capacity limits are respected
-* foreground tasks can preempt eligible background tasks
+See [LICENSE](./LICENSE)
 
 The system uses database constraints and scheduling logic to guarantee consistency.
 
