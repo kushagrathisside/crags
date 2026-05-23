@@ -163,7 +163,7 @@ Ensure the following software is installed.
 # 5.2 Clone Repository
 
 ```id="u2u3q6"
-git clone [<repository-url>](https://github.com/kushagrathisside/crags)
+git clone [https://github.com/kushagrathisside/crags](https://github.com/kushagrathisside/crags)
 cd crags
 ```
 
@@ -350,3 +350,80 @@ This project is distributed under the license specified in the repository.
 # 12. Maintainers
 
 CRAGS Development Team
+=======
+Docker-first local setup for CRAGS with production-like structure:
+- isolated services
+- reproducible backend dependencies via `uv.lock`
+- migration job before API startup
+- health checks and service dependency ordering
+
+## Services
+
+`docker-compose.yml` runs:
+- `postgres` (database, persistent volume)
+- `migrate` (one-shot Alembic upgrade)
+- `backend` (FastAPI)
+- `frontend` (Nginx serving built React app + `/api` reverse proxy)
+
+## Quick Start
+
+1. Create local env file:
+
+```bash
+cp .env.example .env
+```
+
+2. Start everything:
+
+```bash
+docker-compose up --build
+```
+
+Default URLs:
+- Frontend: `http://localhost:5173`
+- Backend docs: `http://localhost:8000/docs`
+
+## Common Docker Compose Commands
+
+```bash
+docker-compose up --build                         # build + run in foreground
+docker-compose up --build -d                      # build + run detached
+docker-compose logs -f                            # tail logs
+docker-compose ps                                 # service status
+docker-compose down --remove-orphans              # stop and remove containers
+docker-compose down --remove-orphans --volumes    # stop + remove DB volume
+```
+
+If your machine has Compose v2, replace `docker-compose` with `docker compose`.
+
+## Environment
+
+Edit `.env` for local overrides (JWT secret, ports, superadmin bootstrap, etc.).
+
+Important:
+- `DATABASE_URL` should target the docker service host `postgres` (not `localhost`) in this stack.
+- Change `SUPERADMIN_PASSWORD` from the default before regular use.
+
+## Dependency Management (Backend / UV)
+
+Backend image uses `backend/uv.lock` for reproducible installs.
+
+When backend dependencies change:
+
+```bash
+cd backend
+uv lock
+cd ..
+docker-compose build --no-cache backend
+docker-compose up --build
+```
+
+## Notes
+
+- For local non-Docker frontend dev (`npm run dev`), Vite proxy forwards `/api` to `http://localhost:8000`.
+- Alembic now reads `DATABASE_URL` from environment, so migrations work consistently in containers and local shells.
+
+## Detailed Guide
+
+For complete local run instructions, see [`RUNNING.md`](./RUNNING.md).
+
