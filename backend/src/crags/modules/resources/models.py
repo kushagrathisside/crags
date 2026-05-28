@@ -30,7 +30,7 @@ class ComputeSystem(Base):
     gpu_units = Column(Integer)
     vram_gb = Column(Integer)
 
-    status = Column(Enum(SystemStatus))
+    status = Column(Enum(SystemStatus), nullable=False, server_default="ACTIVE", default=SystemStatus.ACTIVE)
 
     # Health monitoring
     health_check_url = Column(Text, nullable=True)
