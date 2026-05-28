@@ -76,7 +76,7 @@ pulling `postgres`, `python`, `node`, or `nginx`.
 ```bash
 read -rsp "Proxy password: " PROXY_PASS
 echo
-PROXY_URL="http://pro2024001:${PROXY_PASS}@172.31.2.4:8080"
+PROXY_URL="http://{username}:${PROXY_PASS}@172.31.2.4:8080"
 
 sudo mkdir -p /etc/systemd/system/docker.service.d
 sudo sh -c "cat > /etc/systemd/system/docker.service.d/http-proxy.conf" <<EOF
@@ -116,7 +116,7 @@ Run these exports in the same shell where you run `docker-compose`:
 ```bash
 read -rsp "Proxy password: " PROXY_PASS
 echo
-export HTTP_PROXY="http://pro2024001:${PROXY_PASS}@172.31.2.4:8080"
+export HTTP_PROXY="http://{username}:${PROXY_PASS}@172.31.2.4:8080"
 export HTTPS_PROXY="${HTTP_PROXY}"
 export NO_PROXY="localhost,127.0.0.1,::1,postgres,backend,frontend"
 export http_proxy="${HTTP_PROXY}"
