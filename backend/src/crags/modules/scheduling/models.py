@@ -1,4 +1,6 @@
-from sqlalchemy import Column, Integer, ForeignKey, Enum, String, Text
+from datetime import datetime
+
+from sqlalchemy import Column, DateTime, Integer, ForeignKey, Enum, String, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import TSRANGE
 from crags.db.base import Base
@@ -43,4 +45,10 @@ class Booking(Base):
 
     status = Column(Enum(BookingStatus))
 
+    # Approval workflow
+    approved_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    approved_at = Column(DateTime, nullable=True)
+    rejection_reason = Column(Text, nullable=True)
+
     system = relationship("ComputeSystem")
+    approver = relationship("User", foreign_keys=[approved_by])

@@ -60,6 +60,18 @@ services:
       SUPERADMIN_EMAIL: ${SUPERADMIN_EMAIL:-superadmin@crags.local}
       SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD:-change-me}
       SUPERADMIN_GROUP_NAME: ${SUPERADMIN_GROUP_NAME:-platform-admins}
+      APP_ENV: ${APP_ENV:-development}
+      REDIS_URL: ${REDIS_URL:-}
+      RECONCILE_INTERVAL_MINUTES: ${RECONCILE_INTERVAL_MINUTES:-5}
+      AUDIT_RETAIN_DAYS: ${AUDIT_RETAIN_DAYS:-90}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
+      EMAIL_FROM: ${EMAIL_FROM:-crags@localhost}
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:
@@ -91,6 +103,12 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/ > /dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     restart: unless-stopped
 
 volumes:

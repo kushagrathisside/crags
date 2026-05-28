@@ -7,10 +7,10 @@ from fastapi.security import APIKeyCookie, HTTPAuthorizationCredentials, HTTPBea
 from sqlalchemy.orm import Session
 
 from crags.core.config import settings
-from crags.core.security import decode_access_token
+from crags.core.security import decode_token
 from crags.db.session import get_db
 from crags.modules.iam.models import User, UserRole
-from crags.modules.iam.service import role_from_external
+from crags.modules.iam.service import is_token_blacklisted, role_from_external
 
 cookie_scheme = APIKeyCookie(name=settings.AUTH_COOKIE_NAME, auto_error=False)
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -26,10 +26,8 @@ def _resolve_token(
 ) -> str | None:
     if cookie_token:
         return cookie_token
-
     if bearer and bearer.credentials:
         return bearer.credentials
-
     return None
 
 
@@ -42,9 +40,19 @@ def get_current_user(
     if not token:
         raise _unauthorized()
 
-    payload = decode_access_token(token)
+    payload = decode_token(token)
     if not payload:
         raise _unauthorized("Invalid or expired token")
+
+    if payload.get("type") != "access":
+        raise _unauthorized("Invalid token type")
+
+    jti = payload.get("jti")
+    if not jti:
+        raise _unauthorized("Token missing jti")
+
+    if is_token_blacklisted(db, jti):
+        raise _unauthorized("Token has been revoked")
 
     subject = payload.get("sub")
     try:
@@ -64,7 +72,6 @@ def get_current_user(
 
 def require_role(allowed_roles: Iterable[str | UserRole]):
     normalized: set[UserRole] = set()
-
     for role in allowed_roles:
         if isinstance(role, UserRole):
             normalized.add(role)
@@ -80,3 +87,39 @@ def require_role(allowed_roles: Iterable[str | UserRole]):
         return current_user
 
     return role_checker
+
+
+# Convenience guards matching the RBAC matrix.
+require_admin = require_role([UserRole.ADMIN, UserRole.SUPER_ADMIN])
+require_super_admin = require_role([UserRole.SUPER_ADMIN])
+
+
+def own_group_or_admin(group_id_param: str = "group_id"):
+    """
+    FastAPI dependency factory. Ensures the caller is either an admin role
+    or a GROUP_LEAD accessing their own group.
+
+    Usage:
+        @router.get("/groups/{group_id}/...")
+        def handler(
+            group_id: int,
+            current_user: User = Depends(own_group_or_admin()),
+        ): ...
+    """
+    def checker(
+        group_id: int,
+        current_user: User = Depends(get_current_user),
+    ) -> User:
+        if current_user.role in {UserRole.ADMIN, UserRole.SUPER_ADMIN}:
+            return current_user
+        if (
+            current_user.role == UserRole.GROUP_LEAD
+            and current_user.group_id == group_id
+        ):
+            return current_user
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions",
+        )
+
+    return checker

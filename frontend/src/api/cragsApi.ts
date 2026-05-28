@@ -1,21 +1,31 @@
 import { apiClient } from "./client"
 import type {
+  AnalyticsSummary,
   AuditEvent,
   AuthUser,
   AvailabilitySnapshot,
+  BookingPolicy,
   BookingRecord,
   BookingRequest,
   BookingResponse,
+  BookingTemplate,
   ComputeSystem,
   CreateSystemRequest,
+  UpdateSystemRequest,
+  ForgotPasswordPayload,
   GroupCreatePayload,
   GroupRecord,
   GroupUpdatePayload,
   GroupUsageSummary,
   LoginPayload,
   LoginResponse,
+  MaintenanceWindow,
+  MaintenanceWindowCreate,
+  ResetPasswordPayload,
   UserCreatePayload,
   UserUpdatePayload,
+  WaitlistEntry,
+  WaitlistJoin,
 } from "../types/crags"
 
 export async function login(payload: LoginPayload): Promise<LoginResponse> {
@@ -25,6 +35,24 @@ export async function login(payload: LoginPayload): Promise<LoginResponse> {
 
 export async function logout(): Promise<void> {
   await apiClient.post("/auth/logout")
+}
+
+export async function refreshToken(): Promise<LoginResponse> {
+  const response = await apiClient.post<LoginResponse>("/auth/refresh")
+  return response.data
+}
+
+export async function forgotPassword(payload: ForgotPasswordPayload): Promise<{ message: string }> {
+  const response = await apiClient.post<{ message: string }>(
+    "/auth/forgot-password",
+    payload,
+  )
+  return response.data
+}
+
+export async function resetPassword(payload: ResetPasswordPayload): Promise<{ message: string }> {
+  const response = await apiClient.post<{ message: string }>("/auth/reset-password", payload)
+  return response.data
 }
 
 export async function getCurrentUser(): Promise<AuthUser> {
@@ -81,6 +109,16 @@ export async function listSystems(): Promise<ComputeSystem[]> {
 
 export async function createSystem(payload: CreateSystemRequest): Promise<ComputeSystem> {
   const response = await apiClient.post<ComputeSystem>("/systems/", payload)
+  return response.data
+}
+
+export async function updateSystem(systemId: number, payload: UpdateSystemRequest): Promise<ComputeSystem> {
+  const response = await apiClient.patch<ComputeSystem>(`/systems/${systemId}`, payload)
+  return response.data
+}
+
+export async function deleteSystem(systemId: number): Promise<ComputeSystem> {
+  const response = await apiClient.delete<ComputeSystem>(`/systems/${systemId}`)
   return response.data
 }
 
@@ -187,4 +225,101 @@ export async function listBookings(): Promise<BookingRecord[]> {
 export async function listAuditEvents(): Promise<AuditEvent[]> {
   const response = await apiClient.get<AuditEvent[]>("/audit/")
   return response.data
+}
+
+// ── Booking actions ───────────────────────────────────────────────────────────
+
+export async function approveBooking(bookingId: number): Promise<BookingRecord> {
+  const response = await apiClient.patch<BookingRecord>(`/bookings/${bookingId}/approve`)
+  return response.data
+}
+
+export async function rejectBooking(bookingId: number, reason: string): Promise<BookingRecord> {
+  const response = await apiClient.patch<BookingRecord>(`/bookings/${bookingId}/reject`, { reason })
+  return response.data
+}
+
+export async function extendBooking(bookingId: number, newEndTime: string): Promise<BookingRecord> {
+  const response = await apiClient.patch<BookingRecord>(`/bookings/${bookingId}/extend`, { new_end_time: newEndTime })
+  return response.data
+}
+
+export async function resizeBooking(bookingId: number, resources: { req_cpu?: number; req_gpu?: number; req_ram?: number; req_vram?: number }): Promise<BookingRecord> {
+  const response = await apiClient.patch<BookingRecord>(`/bookings/${bookingId}/resize`, resources)
+  return response.data
+}
+
+// ── Analytics ─────────────────────────────────────────────────────────────────
+
+export async function getAnalytics(fromTime?: string, toTime?: string): Promise<AnalyticsSummary> {
+  const response = await apiClient.get<AnalyticsSummary>("/analytics", {
+    params: { from_time: fromTime, to_time: toTime },
+  })
+  return response.data
+}
+
+export function getAnalyticsCsvUrl(fromTime?: string, toTime?: string): string {
+  const params = new URLSearchParams()
+  if (fromTime) params.set("from_time", fromTime)
+  if (toTime) params.set("to_time", toTime)
+  return `/api/v1/analytics/export.csv?${params.toString()}`
+}
+
+// ── Maintenance Windows ────────────────────────────────────────────────────────
+
+export async function listMaintenanceWindows(systemId?: number): Promise<MaintenanceWindow[]> {
+  const response = await apiClient.get<MaintenanceWindow[]>("/maintenance", {
+    params: systemId ? { system_id: systemId } : undefined,
+  })
+  return response.data
+}
+
+export async function createMaintenanceWindow(payload: MaintenanceWindowCreate): Promise<MaintenanceWindow> {
+  const response = await apiClient.post<MaintenanceWindow>("/maintenance", payload)
+  return response.data
+}
+
+export async function deleteMaintenanceWindow(windowId: number): Promise<void> {
+  await apiClient.delete(`/maintenance/${windowId}`)
+}
+
+// ── Waitlist ──────────────────────────────────────────────────────────────────
+
+export async function listWaitlist(systemId?: number): Promise<WaitlistEntry[]> {
+  const response = await apiClient.get<WaitlistEntry[]>("/waitlist", {
+    params: systemId ? { system_id: systemId } : undefined,
+  })
+  return response.data
+}
+
+export async function joinWaitlist(payload: WaitlistJoin): Promise<WaitlistEntry> {
+  const response = await apiClient.post<WaitlistEntry>("/waitlist", payload)
+  return response.data
+}
+
+export async function cancelWaitlistEntry(entryId: number): Promise<void> {
+  await apiClient.delete(`/waitlist/${entryId}`)
+}
+
+// ── Policies ──────────────────────────────────────────────────────────────────
+
+export async function listPolicies(): Promise<BookingPolicy[]> {
+  const response = await apiClient.get<BookingPolicy[]>("/policies")
+  return response.data
+}
+
+// ── Booking Templates ─────────────────────────────────────────────────────────
+
+export async function listTemplates(): Promise<BookingTemplate[]> {
+  const response = await apiClient.get<BookingTemplate[]>("/templates")
+  return response.data
+}
+
+export async function createTemplate(payload: Omit<BookingTemplate, "id" | "user_id" | "created_at" | "updated_at">): Promise<BookingTemplate> {
+  const response = await apiClient.post<BookingTemplate>("/templates", payload)
+  return response.data
+}
+
+export async function deleteTemplate(templateId: number): Promise<void> {
+  await apiClient.delete(`/templates/${templateId}`)
 }

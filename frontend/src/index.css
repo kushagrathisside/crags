@@ -1,9 +1,39 @@
-html,
-body,
-#root {
+html, body, #root {
   min-height: 100%;
+  margin: 0;
 }
 
-body {
-  margin: 0;
+/* Custom scrollbars — theme-aware via CSS variables set by buildTheme */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb, rgba(113,113,122,0.4));
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover, rgba(113,113,122,0.7));
+}
+
+/* Pulsing live indicator */
+@keyframes pulse-ring {
+  0%   { transform: scale(0.8); opacity: 0.9; }
+  70%  { transform: scale(1.4); opacity: 0; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+.live-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: inherit;
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+/* Gantt timeline booking bar hover */
+.booking-bar {
+  transition: filter 0.1s ease, opacity 0.1s ease;
+}
+.booking-bar:hover {
+  filter: brightness(1.15);
+  z-index: 10;
 }

@@ -1,50 +1,67 @@
 # CRAGS Documentation
 
 CRAGS is the Compute Resource Allocation and Governance System. It provides a
-Docker-first full stack app for registering compute systems, requesting resource
-bookings, enforcing group policy, and auditing scheduling decisions.
+Docker-first full-stack application for registering compute systems, requesting
+resource bookings, enforcing group policy, and auditing scheduling decisions.
 
 ## Start Here
 
-- **New User?** Start with [User Manual](./UserManual.md): how to log in, request bookings, manage your team, and understand resource allocation.
-- [Local Development](./local-development.md): run the stack, configure `.env`, and use backend/frontend development commands.
-- [Architecture](./architecture.md): service layout, backend modules, frontend structure, auth, data model, and scheduling behavior.
-- [API Reference](./api-reference.md): current REST endpoints, request payloads, response shapes, and permission notes.
+- **New User?** → [User Manual](./UserManual.md): login, bookings, waitlist, analytics, and admin tasks.
+- [Local Development](./local-development.md): run the stack, configure `.env`, and use backend/frontend dev commands.
+- [Architecture](./architecture.md): service layout, backend modules, frontend structure, auth, data model, and scheduling.
+- [API Reference](./api-reference.md): all REST endpoints, request payloads, response shapes, and permission notes.
+- [Auth Service](./auth-service.md): token model, refresh flow, RBAC matrix, rate limiting, and password reset.
+- [Resources Service](./resources-service.md): compute system registry, CRUD, status enforcement, capacity guard, health monitoring, and maintenance windows.
+- [Notifications Service](./notifications-service.md): SMTP email delivery, templates, trigger points, and dev mode.
+- [Scheduler](./scheduler.md): booking lifecycle, reconcile algorithm, approval workflow, waitlist promotion, SKIP LOCKED concurrency, and scaling notes.
 - [Operations](./operations.md): Docker Compose actions, health checks, migrations, environment variables, and troubleshooting.
 
 ## Quick Links
 
-When running with the default Docker workflow:
-
-- Frontend: `http://localhost:5173`
-- Backend API: `http://localhost:8000`
-- OpenAPI docs: `http://localhost:8000/docs`
-- Health check: `http://localhost:8000/healthz`
+| Service | URL |
+|---------|-----|
+| Frontend | `http://localhost:5173` |
+| Backend API | `http://localhost:8000` |
+| OpenAPI docs | `http://localhost:8000/docs` |
+| Health check | `http://localhost:8000/healthz` |
 
 ## Documentation Structure
 
 | Document | Audience | Purpose |
 |----------|----------|---------|
-| [UserManual.md](./UserManual.md) | End users | How to use CRAGS: login, bookings, team management, audit trail |
-| [local-development.md](./local-development.md) | Developers | Set up development environment, run the stack locally |
-| [Architecture](./architecture.md) | Developers | System design, service topology, module responsibilities |
-| [API Reference](./api-reference.md) | Backend developers | REST endpoints, authentication, request/response formats |
-| [Operations](./operations.md) | DevOps / Admins | Docker Compose runbook, health checks, troubleshooting |
+| [UserManual.md](./UserManual.md) | End users | Login, bookings, waitlist, analytics, admin queue |
+| [local-development.md](./local-development.md) | Developers | Dev environment, stack commands |
+| [architecture.md](./architecture.md) | Developers | System design, module map, data model |
+| [api-reference.md](./api-reference.md) | Developers | Full REST endpoint reference |
+| [auth-service.md](./auth-service.md) | Developers | Token lifecycle, RBAC, rate limiting |
+| [resources-service.md](./resources-service.md) | Developers / DevOps | Compute system CRUD, health monitor, maintenance windows |
+| [notifications-service.md](./notifications-service.md) | Developers / DevOps | SMTP email, templates, dev mode |
+| [scheduler.md](./scheduler.md) | Developers / DevOps | Booking engine, approval, waitlist, preemption |
+| [operations.md](./operations.md) | DevOps / Admins | Docker Compose runbook, migrations, troubleshooting |
 
 ## Repository Layout
 
 ```text
 .
-|-- backend/              FastAPI service, SQLAlchemy models, Alembic migrations
-|-- frontend/             React, TypeScript, Vite, MUI, React Query
-|-- docs/                 Project documentation
-|-- docker-compose.yml    Local full-stack orchestration
-|-- README.md             Project quick start
-`-- RUNNING.md            Detailed local running guide
+├── backend/              FastAPI service, SQLAlchemy models, Alembic migrations
+├── frontend/             React, TypeScript, Vite, MUI, React Query
+├── docs/                 Project documentation
+├── docker-compose.yml    Local full-stack orchestration
+└── README.md             Project quick start
 ```
 
-## Project Defaults
+## New Modules (added in recent release)
 
-The local stack starts PostgreSQL, runs migrations, then starts the FastAPI
-backend and the Nginx-served React frontend. The backend seeds a super admin on
-startup when `SUPERADMIN_PASSWORD` is set in `.env`.
+| Module | Backend path | Frontend page |
+|--------|-------------|---------------|
+| Policy Engine | `modules/policies/` | — (server-side enforcement) |
+| Booking Approval | `modules/scheduling/` — approve/reject endpoints | Monitoring → Approval Queue |
+| Booking Modifications | `modules/scheduling/` — extend/resize endpoints | Scheduler → Modify Booking |
+| Maintenance Windows | `modules/maintenance/` | Systems → Maintenance Windows |
+| Waitlist / Queue | `modules/waitlist/` | Scheduler → Waitlist |
+| Analytics & Reporting | `modules/analytics/` | Analytics page |
+| Webhooks | `modules/webhooks/` | — (admin REST only) |
+| Audit Export | `modules/audit/` — CSV export | Monitoring |
+| Cost / Billing | `modules/billing/` | — (REST only) |
+| Booking Templates | `modules/templates/` | — (REST only) |
+| System Health Monitor | `modules/health/` | — (auto-runs in reconciler) |

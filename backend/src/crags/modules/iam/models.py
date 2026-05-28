@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
@@ -43,7 +43,25 @@ class User(Base):
     group_id = Column(Integer, ForeignKey("groups.id"))
     is_active = Column(Boolean, default=True, nullable=False)
     auth_provider = Column(String, default="local", nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     last_login = Column(DateTime, nullable=True)
 
     group = relationship("Group", back_populates="users")
+
+
+class TokenBlacklist(Base):
+    """JTIs of revoked tokens. Entries are safe to delete once expires_at has passed."""
+    __tablename__ = "token_blacklist"
+
+    jti = Column(String, primary_key=True)
+    expires_at = Column(DateTime, nullable=False)
+
+
+class PasswordResetToken(Base):
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    token_hash = Column(String, unique=True, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    used_at = Column(DateTime, nullable=True)

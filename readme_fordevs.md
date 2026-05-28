@@ -37,7 +37,7 @@ Resource allocation decisions are logged and auditable to support institutional 
 
 The backend follows a layered architecture.
 
-```id="ox2xva"
+```
 API Router Layer
         │
         ▼
@@ -89,7 +89,7 @@ Responsibilities:
 
 Important files:
 
-```id="crr0pq"
+```
 models.py
 schemas.py
 service.py
@@ -137,7 +137,7 @@ Responsibilities:
 
 Key files:
 
-```id="ykc7ub"
+```
 models.py
 schemas.py
 service.py
@@ -172,7 +172,7 @@ The system uses PostgreSQL with SQLAlchemy ORM.
 
 Key database entities include:
 
-```id="h3j4h3"
+```
 users
 groups
 compute_systems
@@ -201,14 +201,16 @@ When modifying database models:
 
 Create migration:
 
-```id="70mlax"
-alembic revision --autogenerate -m "migration description"
+```bash
+cd backend
+uv run alembic revision --autogenerate -m "migration description"
 ```
 
 Apply migration:
 
-```id="kwafc3"
-alembic upgrade head
+```bash
+cd backend
+uv run alembic upgrade head
 ```
 
 ---
@@ -230,26 +232,37 @@ In particular, PostgreSQL GiST indexes and range constraints may be used to enfo
 
 # 7. Frontend Architecture
 
-The frontend is a React application located in:
+The frontend is a React + TypeScript application located in `frontend/`.
+
+| Technology | Role |
+| --- | --- |
+| React 18 | UI framework |
+| TypeScript | Type safety |
+| Vite | Build tool |
+| MUI | Component library |
+| Axios | HTTP client |
+| React Query | Server state and caching |
+| Redux Toolkit | Client-side state |
+
+Key source directories:
 
 ```
-frontend/
+frontend/src/
+├── api/            Axios client and typed CRAGS API functions
+├── hooks/          React Query hooks wrapping API functions
+├── components/
+│   ├── panels/     Full-page panels (dashboard, audit, bookings, team)
+│   ├── forms/      Booking and system registration forms
+│   ├── charts/     Resource constraint chart and temporal Gantt view
+│   ├── layout/     App shell and navigation wrappers
+│   └── shared/     Reusable UI primitives
+├── types/          Shared TypeScript types for API shapes
+└── utils/          Local helpers (booking simulation)
 ```
 
-Frontend responsibilities:
-
-* provide user interface
-* interact with backend APIs
-* visualize resource availability
-* support booking creation
-
-API communication is centralized in:
-
-```
-frontend/src/api/api.ts
-```
-
-This ensures consistent communication between frontend and backend services.
+All HTTP calls go through `frontend/src/api/client.ts` (Axios instance) and
+are exposed as typed functions in `frontend/src/api/cragsApi.ts`. Components
+never call Axios directly; they use the React Query hooks in `src/hooks/`.
 
 ---
 
@@ -298,11 +311,8 @@ Expose functionality through `router.py`.
 
 ### Step 6 — Update frontend API client
 
-Modify:
-
-```
-frontend/src/api/api.ts
-```
+Add a typed function in `frontend/src/api/cragsApi.ts`, then expose it through
+a React Query hook in `frontend/src/hooks/`.
 
 ---
 
@@ -373,10 +383,10 @@ Developers must follow these practices:
 
 Production deployment typically includes:
 
-```id="ffm3p1"
-Reverse Proxy
+```
+Reverse Proxy (Nginx)
         │
-Backend API
+Backend API (FastAPI)
         │
 PostgreSQL
 ```

@@ -156,7 +156,7 @@ The **Bookings** tab shows all your booking requests.
 
 Each booking displays:
 
-- **Status**: Current state (PENDING, CONFIRMED, CANCELLED)
+- **Status**: Current state (REQUESTED, CONFIRMED, CANCELLED, PREEMPTED, COMPLETED, EXPIRED)
 - **System**: Which resource cluster
 - **Time Window**: Requested dates and times
 - **Resources**: CPU, GPU, RAM, VRAM requested
@@ -185,21 +185,25 @@ Use the filter options to find bookings by:
 
 | Status | Meaning |
 |--------|---------|
-| **PENDING** | Booking request submitted, awaiting system decision |
+| **REQUESTED** | Booking request submitted, awaiting system decision |
 | **CONFIRMED** | Request approved; your resources are reserved |
 | **CANCELLED** | You cancelled the booking |
 | **PREEMPTED** | Your background job was interrupted for a foreground job |
+| **COMPLETED** | Booking window ended normally |
+| **EXPIRED** | Booking was never actioned and the window passed |
 
 ### Status Transitions
 
 ```
-PENDING → CONFIRMED (accepted)
-       ↓
-       CANCELLED (you cancelled)
+REQUESTED → CONFIRMED (accepted)
+          ↓
+          CANCELLED (you cancelled)
 
 CONFIRMED → PREEMPTED (only for background jobs)
-         ↓
-         CANCELLED (automatic after preemption)
+          ↓
+          CANCELLED (you cancelled or admin cancelled)
+          ↓
+          COMPLETED (booking window ended normally)
 ```
 
 ### What "PREEMPTED" Means

@@ -2,13 +2,9 @@
 
 ## Compute Resource Allocation and Governance System (CRAGS)
 
-This directory contains the **frontend application** for the Compute Resource Allocation and Governance System (CRAGS).
-The frontend provides the user interface through which users can:
-
-* View available compute systems
-* Create and manage resource bookings
-* Monitor scheduled allocations
-* Interact with governance and audit features
+This directory contains the **frontend application** for CRAGS. The frontend
+provides the user interface through which users log in, view compute systems,
+create resource bookings, manage group quotas, and review audit history.
 
 The frontend communicates with the **FastAPI backend** through REST APIs.
 
@@ -16,17 +12,17 @@ The frontend communicates with the **FastAPI backend** through REST APIs.
 
 # 1. Technology Stack
 
-The frontend application is built using modern web technologies designed for maintainability and performance.
-
-| Component         | Technology |
-| ----------------- | ---------- |
-| Framework         | React      |
-| Language          | TypeScript |
-| Build Tool        | Vite       |
-| Styling           | CSS        |
-| Linting           | ESLint     |
-| API Communication | Fetch API  |
-| Package Manager   | npm        |
+| Component         | Technology                         |
+| ----------------- | ---------------------------------- |
+| Framework         | React 18                           |
+| Language          | TypeScript                         |
+| Build Tool        | Vite                               |
+| UI Components     | Material UI (MUI)                  |
+| API Communication | Axios (`api/client.ts`)            |
+| Data Fetching     | React Query (`@tanstack/react-query`) |
+| State Management  | Redux Toolkit                      |
+| Linting           | ESLint + TypeScript ESLint         |
+| Package Manager   | npm                                |
 
 ---
 
@@ -42,306 +38,162 @@ frontend/
 ├── eslint.config.js
 │
 ├── public/
-│   └── vite.svg
 │
-├── src/
-│   ├── api/
-│   │   └── api.ts
-│   │
-│   ├── assets/
-│   │   └── react.svg
-│   │
-│   ├── pages/
-│   │   └── Systems.tsx
-│   │
-│   ├── App.tsx
-│   ├── App.css
-│   ├── index.css
-│   └── main.tsx
-│
-├── tsconfig.json
-├── tsconfig.app.json
-└── tsconfig.node.json
+└── src/
+    ├── api/
+    │   ├── api.ts          # Legacy / thin re-export helpers
+    │   ├── client.ts       # Axios instance (baseURL, credentials)
+    │   └── cragsApi.ts     # Typed CRAGS API functions
+    │
+    ├── hooks/              # React Query hooks
+    │   ├── useAuditTrailQuery.ts
+    │   ├── useAvailabilityQuery.ts
+    │   ├── useBookingsQuery.ts
+    │   ├── useCreateBooking.ts
+    │   ├── useCreateSystem.ts
+    │   ├── useCurrentUserQuery.ts
+    │   ├── useLoginMutation.ts
+    │   ├── useLogoutMutation.ts
+    │   └── useSystemsQuery.ts
+    │
+    ├── components/
+    │   ├── panels/
+    │   │   ├── AuditTrailPanel.tsx
+    │   │   ├── BookingLifecycle.tsx
+    │   │   ├── DecisionPanel.tsx
+    │   │   ├── LoginPanel.tsx
+    │   │   ├── MissionControlDashboard.tsx
+    │   │   ├── SystemInventoryPanel.tsx
+    │   │   └── TeamManagementPanel.tsx
+    │   ├── forms/
+    │   │   ├── BookingRequestForm.tsx
+    │   │   └── SystemRegistrationForm.tsx
+    │   ├── charts/
+    │   │   ├── ResourceConstraintChart.tsx
+    │   │   └── TemporalGantt.tsx
+    │   ├── layout/          # Shell, nav, layout wrappers
+    │   └── shared/          # Reusable UI primitives
+    │
+    ├── pages/
+    │   └── Systems.tsx
+    │
+    ├── types/
+    │   └── crags.ts         # Shared TypeScript types for API shapes
+    │
+    ├── utils/
+    │   └── simulateBooking.ts
+    │
+    ├── App.tsx              # Authenticated app shell and tab composition
+    ├── App.css
+    ├── index.css
+    └── main.tsx
 ```
 
 ---
 
-# 3. Description of Key Files
+# 3. Key Files
 
-## 3.1 Entry Files
+### `src/api/client.ts`
 
-### `index.html`
+Creates the shared Axios instance used by all API calls.
 
-The main HTML entry point for the application.
-This file loads the React application through the Vite development server.
+- Sets `baseURL` from `VITE_API_BASE_URL` or falls back to `/api/v1`
+- Enables `withCredentials` so the session cookie is sent automatically
 
----
+### `src/api/cragsApi.ts`
 
-### `src/main.tsx`
+Typed functions wrapping Axios calls to the CRAGS REST API. Components and
+hooks import from here rather than calling Axios directly.
 
-Application bootstrap file.
+### `src/hooks/`
 
-Responsibilities:
-
-* Initializes the React application
-* Attaches the root component (`App.tsx`) to the DOM
-* Configures application rendering
-
----
+React Query hooks wrap `cragsApi.ts` functions. Components call hooks; they
+never import `cragsApi.ts` directly. This keeps cache invalidation and loading
+states centralised.
 
 ### `src/App.tsx`
 
-Main application component.
-
-Responsibilities:
-
-* Defines the root component of the UI
-* Handles routing and page switching
-* Defines the application layout
-
-Future updates will introduce **navigation, authentication routing, and dashboards** in this file.
+Authenticated application shell. Renders the `MissionControlDashboard` when the
+user is logged in; shows `LoginPanel` otherwise.
 
 ---
 
-# 4. Pages
+# 4. Installation
 
-Pages represent major UI views.
+## Prerequisites
 
-## `src/pages/Systems.tsx`
+- Node.js 18 or later
+- npm
 
-This page displays available compute systems.
-
-Responsibilities:
-
-* Fetch system information from the backend
-* Display system specifications
-* Provide entry point for resource booking
-
-Future improvements may include:
-
-* System status indicators
-* Capacity visualization
-* Resource utilization metrics
-
----
-
-# 5. API Integration
-
-The frontend communicates with backend services through API helper functions.
-
-## `src/api/api.ts`
-
-This file centralizes all HTTP communication with the backend.
-
-Example responsibilities:
-
-* Fetch list of compute systems
-* Submit booking requests
-* Retrieve scheduled bookings
-* Request audit summaries
-
-Centralizing API logic ensures:
-
-* Maintainable network layer
-* Consistent error handling
-* Simplified frontend components
-
-Example API structure:
-
-```ts
-const API_BASE = "http://localhost:8000";
-
-export async function getSystems() {
-    const response = await fetch(`${API_BASE}/resources/systems`);
-    return response.json();
-}
-```
-
----
-
-# 6. Configuration Files
-
-## `vite.config.ts`
-
-Defines build configuration for the Vite development server.
-
-Responsibilities:
-
-* Local development server configuration
-* Build optimization
-* Module resolution
-
----
-
-## `tsconfig.json`
-
-TypeScript configuration for the project.
-
-Defines:
-
-* Type checking behavior
-* Module resolution
-* Compiler options
-
----
-
-## `eslint.config.js`
-
-Defines code quality rules and linting configuration.
-
-This ensures:
-
-* Consistent coding style
-* Early detection of errors
-* Maintainable codebase
-
----
-
-# 7. Installation
-
-## 7.1 Prerequisites
-
-Ensure the following software is installed:
-
-* Node.js (version 18 or later recommended)
-* npm
-
-Check installation:
-
-```
+```bash
 node -v
 npm -v
 ```
 
----
+## Install Dependencies
 
-## 7.2 Install Dependencies
-
-Navigate to the frontend directory:
-
-```
+```bash
 cd frontend
-```
-
-Install required packages:
-
-```
 npm install
 ```
 
 ---
 
-# 8. Running the Development Server
+# 5. Running the Development Server
 
-Start the development server:
+Start the backend first, then:
 
-```
+```bash
 npm run dev
 ```
 
-The application will be available at:
-
-```
-http://localhost:5173
-```
-
-The development server provides:
-
-* Hot module reloading
-* Fast rebuild times
-* Error overlays
+The app is available at `http://localhost:5173`. The Vite dev server proxies
+`/api` requests to `http://localhost:8000`.
 
 ---
 
-# 9. Connecting to the Backend
+# 6. Production Build
 
-By default, the frontend expects the backend API at:
-
-```
-http://localhost:8000
+```bash
+npm run build
 ```
 
-Ensure the FastAPI backend server is running before starting the frontend.
+The build output goes to `frontend/dist`. In Docker, Nginx serves this directory
+and proxies `/api/` to the backend Compose service.
 
-To change the API endpoint, modify:
+---
 
-```
-src/api/api.ts
-```
+# 7. Linting and Type Checking
 
-Example:
-
-```
-const API_BASE = "http://localhost:8000";
+```bash
+npm run lint
+npm run build   # also runs tsc
 ```
 
 ---
 
-# 10. Development Workflow
+# 8. Development Workflow
 
-Recommended development cycle:
-
-1. Start backend server
-2. Start frontend development server
-3. Implement UI components
-4. Connect components to backend APIs
-5. Validate functionality through browser
-
----
-
-# 11. Future Improvements
-
-The current frontend provides foundational structure. Planned enhancements include:
-
-### Booking Interface
-
-* Booking creation forms
-* Calendar-based scheduling interface
-* Resource availability visualization
-
-### User Authentication
-
-* Login interface
-* Role-based access control
-* Secure API authentication
-
-### Dashboard
-
-* Resource utilization statistics
-* Weekly compute consumption metrics
-* Governance analytics visualization
-
-### Improved UI
-
-* Navigation bar
-* Layout system
-* Responsive design
+1. Start the full stack: `docker-compose up --build` from the repo root.
+2. Or run backend and frontend separately for faster iteration (see
+   [local-development.md](../docs/local-development.md)).
+3. Keep API functions in `src/api/cragsApi.ts` and expose them through hooks in
+   `src/hooks/`.
+4. Do not embed backend URLs inside components; use the Axios client.
 
 ---
 
-# 12. Contribution Guidelines
+# 9. Contribution Guidelines
 
-When contributing to the frontend:
-
-1. Maintain consistent TypeScript usage
-2. Keep API communication centralized in `api.ts`
-3. Avoid embedding backend URLs inside components
-4. Document new components and modules
+1. Maintain consistent TypeScript types in `src/types/crags.ts`.
+2. Add new API calls to `src/api/cragsApi.ts` and wrap them in a React Query
+   hook under `src/hooks/`.
+3. Do not embed backend URLs or raw Axios calls inside components.
+4. Document new components and hooks with a brief JSDoc comment when their
+   purpose is non-obvious.
 
 ---
 
-# 13. License
+# 10. License
 
 This project is distributed under the license specified in the root repository.
-
----
-
-# 14. Maintainers
-
-CRAGS Development Team
-
----
-
-# 15. Additional Notes
-
-The frontend is intentionally designed as a **lightweight interface layer**, with most logic handled by the backend scheduling engine. This ensures maintainability and flexibility for future extensions such as dashboards, advanced scheduling visualization, and governance analytics.

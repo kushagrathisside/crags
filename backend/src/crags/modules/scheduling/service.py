@@ -7,9 +7,9 @@ from psycopg.types.range import Range
 from sqlalchemy import func
 from sqlalchemy.orm import Query, Session
 
-from crags.modules.audit.models import AuditLog
+from crags.modules.audit.models import AuditAction, AuditLog
 from crags.modules.iam.models import Group, User, UserRole
-from crags.modules.resources.models import ComputeSystem
+from crags.modules.resources.models import ComputeSystem, SystemStatus
 from crags.modules.scheduling.models import AccessType, Booking, BookingStatus
 
 
@@ -104,12 +104,15 @@ def _serialize_booking(booking: Booking) -> dict:
         "req_gpu": booking.req_gpu,
         "req_ram": booking.req_ram,
         "req_vram": booking.req_vram,
-        "access_type": booking.access_type.value if booking.access_type else "BACKGROUND",
+        "access_type": booking.access_type.value,
         "academic_category": booking.academic_category,
         "project_title": booking.project_title,
         "expected_deliverable": booking.expected_deliverable,
         "objective": booking.objective,
-        "status": booking.status.value if booking.status else "REQUESTED",
+        "status": booking.status.value,
+        "approved_by": booking.approved_by,
+        "approved_at": booking.approved_at,
+        "rejection_reason": booking.rejection_reason,
     }
 
 
@@ -334,6 +337,10 @@ def _enforce_group_quotas(
             )
 
 
+_LIST_DEFAULT_LIMIT = 200
+_LIST_MAX_LIMIT = 1000
+
+
 def list_bookings(
     db: Session,
     actor_user: User,
@@ -344,7 +351,12 @@ def list_bookings(
     academic_category: str | None = None,
     start_time: datetime | None = None,
     end_time: datetime | None = None,
+    limit: int = _LIST_DEFAULT_LIMIT,
+    offset: int = 0,
 ) -> list[dict]:
+    limit = min(max(1, limit), _LIST_MAX_LIMIT)
+    offset = max(0, offset)
+
     query = db.query(Booking)
     query = _scope_query_for_actor(query, actor_user)
 
@@ -384,7 +396,13 @@ def list_bookings(
     elif end_time:
         query = query.filter(func.lower(Booking.booking_period) < _to_utc_naive(end_time))
 
-    bookings = query.order_by(func.lower(Booking.booking_period).asc(), Booking.id.asc()).all()
+    bookings = (
+        query
+        .order_by(func.lower(Booking.booking_period).asc(), Booking.id.asc())
+        .limit(limit)
+        .offset(offset)
+        .all()
+    )
     return [_serialize_booking(booking) for booking in bookings]
 
 
@@ -403,6 +421,13 @@ def create_booking(db: Session, data, actor_user: User):
     requested_range = Range(normalized_start, normalized_end)
     overlap_window = _serialize_overlap_window(normalized_start, normalized_end)
 
+    # Defense-in-depth: reject bookings that start in the past.
+    # The Pydantic schema enforces this for API callers; this guard covers
+    # direct service calls (scripts, tests, internal use).
+    now_naive = datetime.now(timezone.utc).replace(tzinfo=None)
+    if normalized_start <= now_naive:
+        raise ValueError("start_time must be in the future")
+
     try:
         access_type = AccessType(data.access_type)
     except ValueError as exc:
@@ -418,6 +443,11 @@ def create_booking(db: Session, data, actor_user: User):
 
         if not system:
             raise ValueError("Compute system not found")
+
+        if system.status != SystemStatus.ACTIVE:
+            raise ValueError(
+                f"System '{system.name}' is not available for booking (status: {system.status.value})"
+            )
 
         _enforce_group_quotas(
             db,
@@ -533,6 +563,39 @@ def create_booking(db: Session, data, actor_user: User):
                 ],
             )
 
+        # Policy check: may route to REQUESTED instead of CONFIRMED
+        initial_status = BookingStatus.CONFIRMED
+        try:
+            from crags.modules.policies.service import check_booking_policy
+            duration_hours = (normalized_end - normalized_start).total_seconds() / 3600
+            now_for_advance = datetime.now(timezone.utc).replace(tzinfo=None)
+            advance_days = (normalized_start - now_for_advance).total_seconds() / 86400
+            active_count = (
+                db.query(Booking)
+                .filter(
+                    Booking.user_id == actor_user.id,
+                    Booking.status.in_(ACTIVE_CAPACITY_STATUSES),
+                )
+                .count()
+            )
+            policy_result = check_booking_policy(
+                db,
+                group_id=actor_user.group_id,
+                req_cpu=data.req_cpu,
+                req_gpu=data.req_gpu,
+                req_ram=data.req_ram,
+                duration_hours=duration_hours,
+                advance_days=advance_days,
+                current_booking_count=active_count,
+            )
+            if policy_result.violations:
+                raise ValueError("; ".join(policy_result.violations))
+            if policy_result.requires_approval:
+                initial_status = BookingStatus.REQUESTED
+        except (ImportError, Exception) as _pe:
+            if isinstance(_pe, ValueError):
+                raise
+
         booking = Booking(
             system_id=data.system_id,
             user_id=actor_user.id,
@@ -546,7 +609,7 @@ def create_booking(db: Session, data, actor_user: User):
             project_title=data.project_title,
             expected_deliverable=data.expected_deliverable,
             objective=data.objective,
-            status=BookingStatus.CONFIRMED,
+            status=initial_status,
         )
 
         db.add(booking)
@@ -555,13 +618,32 @@ def create_booking(db: Session, data, actor_user: User):
             AuditLog(
                 table_name="bookings",
                 record_id=booking.id,
-                action="CREATED",
-                timestamp=datetime.utcnow(),
+                action=AuditAction.BOOKING_CREATED,
+                timestamp=datetime.now(timezone.utc),
                 user_id=actor_user.id,
             )
         )
         db.commit()
         db.refresh(booking)
+
+        # Fire-and-forget — email failure must not affect the booking result.
+        if actor_user.email:
+            from crags.modules.notifications.service import send_email
+            from crags.modules.notifications.templates import booking_confirmed_email
+            send_email(
+                actor_user.email,
+                *booking_confirmed_email(
+                    username=actor_user.username,
+                    system_name=system.name,
+                    start_time=normalized_start.isoformat(),
+                    end_time=normalized_end.isoformat(),
+                    req_cpu=data.req_cpu,
+                    req_gpu=data.req_gpu,
+                    req_ram=data.req_ram,
+                    req_vram=data.req_vram,
+                    booking_id=booking.id,
+                ),
+            )
 
         return booking
     except Exception:
@@ -602,6 +684,13 @@ def check_availability(db: Session, system_id, start_time, end_time):
 
 
 def preempt_background_jobs(db: Session, system_id, required_gpu, time_range):
+    from crags.modules.iam.models import User as UserModel
+    from crags.modules.notifications.service import send_email
+    from crags.modules.notifications.templates import booking_preempted_email
+
+    system = db.query(ComputeSystem).filter(ComputeSystem.id == system_id).first()
+    system_name = system.name if system else str(system_id)
+
     overlapping = (
         db.query(Booking)
         .filter(
@@ -613,6 +702,13 @@ def preempt_background_jobs(db: Session, system_id, required_gpu, time_range):
         .order_by(Booking.req_gpu.desc(), Booking.id.asc())
         .all()
     )
+
+    # Batch-load all owners up front to avoid N+1 queries in the loop.
+    owner_ids = {job.user_id for job in overlapping if job.user_id is not None}
+    owners_by_id: dict[int, UserModel] = {}
+    if owner_ids:
+        rows = db.query(UserModel).filter(UserModel.id.in_(owner_ids)).all()
+        owners_by_id = {u.id: u for u in rows}
 
     freed_gpu = 0
     preempted_ids: list[int] = []
@@ -626,16 +722,179 @@ def preempt_background_jobs(db: Session, system_id, required_gpu, time_range):
             AuditLog(
                 table_name="bookings",
                 record_id=job.id,
-                action="PREEMPTED",
-                timestamp=datetime.utcnow(),
+                action=AuditAction.BOOKING_PREEMPTED,
+                timestamp=datetime.now(timezone.utc),
                 user_id=job.user_id,
             )
         )
+
+        owner = owners_by_id.get(job.user_id) if job.user_id is not None else None
+        if owner and owner.email:
+            period = job.booking_period
+            send_email(
+                owner.email,
+                *booking_preempted_email(
+                    username=owner.username,
+                    system_name=system_name,
+                    start_time=period.lower.isoformat() if period and period.lower else "",
+                    end_time=period.upper.isoformat() if period and period.upper else "",
+                    booking_id=job.id,
+                ),
+            )
 
         if freed_gpu >= required_gpu:
             break
 
     return freed_gpu, preempted_ids
+
+
+def approve_booking(db: Session, booking_id: int, actor_user: User) -> dict:
+    if actor_user.role not in ADMIN_ROLES:
+        raise BookingPermissionError("Only admins can approve bookings")
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise BookingNotFoundError(f"Booking {booking_id} not found")
+    if booking.status != BookingStatus.REQUESTED:
+        raise BookingConflictError(
+            detail=f"Booking is in status {booking.status.value}, not REQUESTED",
+            reason="INVALID_TRANSITION",
+        )
+    booking.status = BookingStatus.CONFIRMED
+    booking.approved_by = actor_user.id
+    booking.approved_at = datetime.now(timezone.utc)
+    db.add(AuditLog(
+        table_name="bookings", record_id=booking.id,
+        action=AuditAction.BOOKING_APPROVED,
+        timestamp=datetime.now(timezone.utc), user_id=actor_user.id,
+    ))
+    db.commit()
+    db.refresh(booking)
+    return _serialize_booking(booking)
+
+
+def reject_booking(db: Session, booking_id: int, actor_user: User, reason: str) -> dict:
+    if actor_user.role not in ADMIN_ROLES:
+        raise BookingPermissionError("Only admins can reject bookings")
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise BookingNotFoundError(f"Booking {booking_id} not found")
+    if booking.status != BookingStatus.REQUESTED:
+        raise BookingConflictError(
+            detail=f"Booking is in status {booking.status.value}, not REQUESTED",
+            reason="INVALID_TRANSITION",
+        )
+    booking.status = BookingStatus.CANCELLED
+    booking.rejection_reason = reason
+    db.add(AuditLog(
+        table_name="bookings", record_id=booking.id,
+        action=AuditAction.BOOKING_REJECTED,
+        timestamp=datetime.now(timezone.utc), user_id=actor_user.id,
+    ))
+    db.commit()
+    db.refresh(booking)
+    return _serialize_booking(booking)
+
+
+def extend_booking(db: Session, booking_id: int, actor_user: User, new_end_time: datetime) -> dict:
+    booking = db.query(Booking).filter(Booking.id == booking_id).with_for_update().first()
+    if not booking:
+        raise BookingNotFoundError(f"Booking {booking_id} not found")
+    _ensure_actor_can_access_booking(db, actor_user, booking)
+    if booking.status not in (BookingStatus.CONFIRMED, BookingStatus.REQUESTED):
+        raise BookingConflictError(
+            detail="Only CONFIRMED or REQUESTED bookings can be extended",
+            reason="INVALID_TRANSITION",
+        )
+    period = booking.booking_period
+    old_start = period.lower
+    new_end_naive = _to_utc_naive(new_end_time)
+    if new_end_naive <= (period.upper or old_start):
+        raise ValueError("new_end_time must be after the current end time")
+
+    new_range = Range(old_start, new_end_naive)
+    # Check capacity for the extension window
+    extension_range = Range(period.upper, new_end_naive)
+    overlapping = (
+        db.query(Booking)
+        .filter(
+            Booking.system_id == booking.system_id,
+            Booking.booking_period.op("&&")(extension_range),
+            Booking.status.in_(ACTIVE_CAPACITY_STATUSES),
+            Booking.id != booking.id,
+        ).all()
+    )
+    system = db.query(ComputeSystem).filter(ComputeSystem.id == booking.system_id).first()
+    if system:
+        used_cpu = sum(b.req_cpu for b in overlapping)
+        used_gpu = sum(b.req_gpu for b in overlapping)
+        used_ram = sum(b.req_ram for b in overlapping)
+        used_vram = sum(b.req_vram for b in overlapping)
+        ow = _serialize_overlap_window(period.upper, new_end_naive)
+        ids = [b.id for b in overlapping]
+        if used_cpu + booking.req_cpu > system.cpu_cores:
+            raise BookingConflictError(detail="CPU capacity exceeded for extension", reason="CAPACITY_EXCEEDED", resource="CPU", shortage=used_cpu + booking.req_cpu - system.cpu_cores, overlap_window=ow, conflicting_booking_ids=ids)
+        if used_gpu + booking.req_gpu > system.gpu_units:
+            raise BookingConflictError(detail="GPU capacity exceeded for extension", reason="CAPACITY_EXCEEDED", resource="GPU", shortage=used_gpu + booking.req_gpu - system.gpu_units, overlap_window=ow, conflicting_booking_ids=ids)
+        if used_ram + booking.req_ram > system.ram_gb:
+            raise BookingConflictError(detail="RAM capacity exceeded for extension", reason="CAPACITY_EXCEEDED", resource="RAM", shortage=used_ram + booking.req_ram - system.ram_gb, overlap_window=ow, conflicting_booking_ids=ids)
+        if used_vram + booking.req_vram > system.vram_gb:
+            raise BookingConflictError(detail="VRAM capacity exceeded for extension", reason="CAPACITY_EXCEEDED", resource="VRAM", shortage=used_vram + booking.req_vram - system.vram_gb, overlap_window=ow, conflicting_booking_ids=ids)
+
+    booking.booking_period = new_range
+    db.add(AuditLog(table_name="bookings", record_id=booking.id, action=AuditAction.BOOKING_EXTENDED, timestamp=datetime.now(timezone.utc), user_id=actor_user.id))
+    db.commit()
+    db.refresh(booking)
+    return _serialize_booking(booking)
+
+
+def resize_booking(db: Session, booking_id: int, actor_user: User, *, req_cpu: int | None, req_gpu: int | None, req_ram: int | None, req_vram: int | None) -> dict:
+    booking = db.query(Booking).filter(Booking.id == booking_id).with_for_update().first()
+    if not booking:
+        raise BookingNotFoundError(f"Booking {booking_id} not found")
+    _ensure_actor_can_access_booking(db, actor_user, booking)
+    if booking.status not in (BookingStatus.CONFIRMED, BookingStatus.REQUESTED):
+        raise BookingConflictError(detail="Only CONFIRMED or REQUESTED bookings can be resized", reason="INVALID_TRANSITION")
+
+    new_cpu = req_cpu if req_cpu is not None else booking.req_cpu
+    new_gpu = req_gpu if req_gpu is not None else booking.req_gpu
+    new_ram = req_ram if req_ram is not None else booking.req_ram
+    new_vram = req_vram if req_vram is not None else booking.req_vram
+
+    period = booking.booking_period
+    overlapping = (
+        db.query(Booking)
+        .filter(
+            Booking.system_id == booking.system_id,
+            Booking.booking_period.op("&&")(period),
+            Booking.status.in_(ACTIVE_CAPACITY_STATUSES),
+            Booking.id != booking.id,
+        ).all()
+    )
+    system = db.query(ComputeSystem).filter(ComputeSystem.id == booking.system_id).first()
+    if system:
+        used_cpu = sum(b.req_cpu for b in overlapping)
+        used_gpu = sum(b.req_gpu for b in overlapping)
+        used_ram = sum(b.req_ram for b in overlapping)
+        used_vram = sum(b.req_vram for b in overlapping)
+        ow = _serialize_overlap_window(period.lower, period.upper)
+        ids = [b.id for b in overlapping]
+        if used_cpu + new_cpu > system.cpu_cores:
+            raise BookingConflictError(detail="CPU capacity exceeded after resize", reason="CAPACITY_EXCEEDED", resource="CPU", shortage=used_cpu + new_cpu - system.cpu_cores, overlap_window=ow, conflicting_booking_ids=ids)
+        if used_gpu + new_gpu > system.gpu_units:
+            raise BookingConflictError(detail="GPU capacity exceeded after resize", reason="CAPACITY_EXCEEDED", resource="GPU", shortage=used_gpu + new_gpu - system.gpu_units, overlap_window=ow, conflicting_booking_ids=ids)
+        if used_ram + new_ram > system.ram_gb:
+            raise BookingConflictError(detail="RAM capacity exceeded after resize", reason="CAPACITY_EXCEEDED", resource="RAM", shortage=used_ram + new_ram - system.ram_gb, overlap_window=ow, conflicting_booking_ids=ids)
+        if used_vram + new_vram > system.vram_gb:
+            raise BookingConflictError(detail="VRAM capacity exceeded after resize", reason="CAPACITY_EXCEEDED", resource="VRAM", shortage=used_vram + new_vram - system.vram_gb, overlap_window=ow, conflicting_booking_ids=ids)
+
+    booking.req_cpu = new_cpu
+    booking.req_gpu = new_gpu
+    booking.req_ram = new_ram
+    booking.req_vram = new_vram
+    db.add(AuditLog(table_name="bookings", record_id=booking.id, action=AuditAction.BOOKING_RESIZED, timestamp=datetime.now(timezone.utc), user_id=actor_user.id))
+    db.commit()
+    db.refresh(booking)
+    return _serialize_booking(booking)
 
 
 def cancel_booking(db: Session, booking_id: int, actor_user: User):
@@ -666,8 +925,8 @@ def cancel_booking(db: Session, booking_id: int, actor_user: User):
         AuditLog(
             table_name="bookings",
             record_id=booking.id,
-            action="CANCELLED",
-            timestamp=datetime.utcnow(),
+            action=AuditAction.BOOKING_CANCELLED,
+            timestamp=datetime.now(timezone.utc),
             user_id=actor_user.id,
         )
     )

@@ -201,7 +201,20 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
+# Local generated output
+frontend/dist/
+frontend/node_modules/
+.agents/
+
+# Design source exports (large HTML files, not needed in repo — tokens live in frontend/src/theme/)
+designs/
+
+# Windows download metadata
+*.Zone.Identifier
+
 # Marimo
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+

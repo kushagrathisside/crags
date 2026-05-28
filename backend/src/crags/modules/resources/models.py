@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Enum
+from sqlalchemy import Column, DateTime, Integer, String, Text, Enum
 from crags.db.base import Base
 import enum
 
@@ -31,3 +31,8 @@ class ComputeSystem(Base):
     vram_gb = Column(Integer)
 
     status = Column(Enum(SystemStatus))
+
+    # Health monitoring
+    health_check_url = Column(Text, nullable=True)
+    last_health_check_at = Column(DateTime(timezone=True), nullable=True)
+    last_health_status = Column(String(20), nullable=True)

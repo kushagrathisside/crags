@@ -4,6 +4,7 @@ import {
   Button,
   Card,
   CardContent,
+  CircularProgress,
   Divider,
   FormControlLabel,
   Grid,
@@ -204,6 +205,32 @@ export function TeamManagementPanel({ currentRole }: Props) {
     }
     return "Failed to create user."
   }, [userCreateMutation.error])
+
+  if (groupsQuery.isLoading || usersQuery.isLoading) {
+    return (
+      <Card variant="outlined">
+        <CardContent>
+          <Stack direction="row" alignItems="center" spacing={1.5} sx={{ py: 2 }}>
+            <CircularProgress size={20} />
+            <Typography color="text.secondary">Loading team data…</Typography>
+          </Stack>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (groupsQuery.isError || usersQuery.isError) {
+    const msg = (groupsQuery.error ?? usersQuery.error) instanceof Error
+      ? ((groupsQuery.error ?? usersQuery.error) as Error).message
+      : "Failed to load team data."
+    return (
+      <Card variant="outlined">
+        <CardContent>
+          <Alert severity="error">{msg}</Alert>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card variant="outlined">

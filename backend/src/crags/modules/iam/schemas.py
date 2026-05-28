@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 
 class LoginRequest(BaseModel):
@@ -12,14 +12,20 @@ class LoginRequest(BaseModel):
     def resolve_identifier(self) -> str:
         if self.identifier and self.identifier.strip():
             return self.identifier.strip()
-
         if self.username and self.username.strip():
             return self.username.strip()
-
         if self.email:
             return str(self.email)
-
         raise ValueError("Provide identifier, username, or email.")
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str = Field(..., min_length=1)
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=8)
 
 
 class GroupQuotaPayload(BaseModel):
@@ -79,6 +85,7 @@ class UserUpdate(BaseModel):
 class AuthSessionResponse(BaseModel):
     token_type: str = "cookie"
     user: UserResponse
+    access_token_expires_at: datetime
 
 
 class GroupUsageSummary(BaseModel):

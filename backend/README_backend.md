@@ -314,10 +314,9 @@ This provides strong guarantees even under concurrent booking requests.
 
 Ensure the following are installed:
 
-* Python 3.10+
+* Python 3.12+
 * PostgreSQL
-* pip
-* virtual environment tools
+* `uv` ([install guide](https://docs.astral.sh/uv/getting-started/installation/))
 
 ---
 
@@ -327,19 +326,7 @@ Navigate to the backend directory:
 
 ```bash
 cd backend
-```
-
-Create virtual environment:
-
-```bash
-python -m venv venv
-source venv/bin/activate
-```
-
-Install dependencies:
-
-```bash
-pip install -e .
+uv sync
 ```
 
 ---
@@ -349,13 +336,11 @@ pip install -e .
 Start the development server:
 
 ```bash
-./run.sh
-```
-
-or
-
-```bash
-uvicorn src.crags.main:app --reload
+cd backend
+export DATABASE_URL=postgresql+psycopg://crags:crags@localhost:5432/crags
+export PYTHONPATH=src
+uv run alembic upgrade head
+uv run uvicorn crags.main:app --reload --app-dir src --host 0.0.0.0 --port 8000
 ```
 
 The API will be available at:

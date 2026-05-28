@@ -8,6 +8,8 @@ export type BookingStatus =
   | "COMPLETED"
   | "EXPIRED"
 
+export type SystemStatus = "ACTIVE" | "MAINTENANCE" | "OFFLINE"
+
 export type ComputeSystem = {
   id: number
   name: string
@@ -16,6 +18,7 @@ export type ComputeSystem = {
   ram_gb: number
   gpu_units: number
   vram_gb: number
+  status: SystemStatus
 }
 
 export type AvailabilitySnapshot = {
@@ -87,6 +90,17 @@ export type CreateSystemRequest = {
   ram_gb: number
   gpu_units: number
   vram_gb: number
+  status?: SystemStatus
+}
+
+export type UpdateSystemRequest = {
+  name?: string
+  system_type?: string
+  cpu_cores?: number
+  ram_gb?: number
+  gpu_units?: number
+  vram_gb?: number
+  status?: SystemStatus
 }
 
 export type ValidationIssue = {
@@ -143,6 +157,16 @@ export type LoginPayload = {
 export type LoginResponse = {
   token_type: "cookie"
   user: AuthUser
+  access_token_expires_at: string
+}
+
+export type ForgotPasswordPayload = {
+  email: string
+}
+
+export type ResetPasswordPayload = {
+  token: string
+  new_password: string
 }
 
 export type GroupQuota = {
@@ -192,4 +216,134 @@ export type GroupUsageSummary = {
   ram_gb_hours: number
   vram_gb_hours: number
   bookings_count: number
+}
+
+// ── New module types ──────────────────────────────────────────────────────────
+
+export type WaitlistEntry = {
+  id: number
+  user_id: number
+  system_id: number
+  req_cpu: number
+  req_gpu: number
+  req_ram: number
+  req_vram: number
+  duration_hours: number
+  access_type: string
+  academic_category: string | null
+  project_title: string | null
+  status: string
+  priority: number
+  created_at: string
+  notified_at: string | null
+}
+
+export type WaitlistJoin = {
+  system_id: number
+  req_cpu: number
+  req_gpu: number
+  req_ram: number
+  req_vram: number
+  duration_hours: number
+  access_type: string
+  academic_category?: string
+  project_title?: string
+}
+
+export type MaintenanceWindow = {
+  id: number
+  system_id: number
+  start_time: string
+  end_time: string
+  reason: string | null
+  created_by: number | null
+  created_at: string
+}
+
+export type MaintenanceWindowCreate = {
+  system_id: number
+  start_time: string
+  end_time: string
+  reason?: string
+}
+
+export type BookingPolicy = {
+  id: number
+  name: string
+  description: string | null
+  max_duration_hours: number | null
+  max_advance_days: number | null
+  max_concurrent_bookings: number | null
+  approval_required_above_gpu: number | null
+  approval_required_above_cpu: number | null
+  approval_required_above_ram_gb: number | null
+  approval_required_above_hours: number | null
+  always_require_approval: boolean
+  group_id: number | null
+  is_default: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type AnalyticsSummary = {
+  from_time: string
+  to_time: string
+  total_bookings: number
+  total_cpu_hours: number
+  total_gpu_hours: number
+  total_ram_gb_hours: number
+  total_vram_gb_hours: number
+  per_user: ResourceUsageEntry[]
+  per_group: GroupUsageEntry[]
+  per_system: SystemUtilizationEntry[]
+}
+
+export type ResourceUsageEntry = {
+  user_id: number
+  username: string | null
+  cpu_hours: number
+  gpu_hours: number
+  ram_gb_hours: number
+  vram_gb_hours: number
+  booking_count: number
+}
+
+export type GroupUsageEntry = {
+  group_id: number
+  group_name: string | null
+  cpu_hours: number
+  gpu_hours: number
+  ram_gb_hours: number
+  vram_gb_hours: number
+  booking_count: number
+}
+
+export type SystemUtilizationEntry = {
+  system_id: number
+  system_name: string
+  cpu_utilization_pct: number
+  gpu_utilization_pct: number
+  ram_utilization_pct: number
+  vram_utilization_pct: number
+  booking_count: number
+  active_hours: number
+}
+
+export type BookingTemplate = {
+  id: number
+  user_id: number
+  name: string
+  system_id: number | null
+  req_cpu: number
+  req_gpu: number
+  req_ram: number
+  req_vram: number
+  duration_hours: number | null
+  access_type: string
+  academic_category: string | null
+  project_title: string | null
+  expected_deliverable: string | null
+  objective: string | null
+  created_at: string
+  updated_at: string
 }
