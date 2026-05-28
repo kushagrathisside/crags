@@ -136,6 +136,15 @@ The system creates a superadmin on startup when `SUPERADMIN_PASSWORD` is set in 
 - **Email**: `superadmin@crags.local`
 - **Password**: Value from `SUPERADMIN_PASSWORD` in `.env`
 
+## Acknowledgements
+
+CRAGS was built with assistance from two AI systems, each playing a distinct role:
+
+- **OpenAI Codex** — responsible for the initial architecture and the bulk of the implementation: backend modules, data models, scheduling logic, migrations, and the original frontend structure. The foundation of this project is Codex's work.
+- **Anthropic Claude** — contributed refinements in a later session: the authentication layer, Redis caching, frontend redesign (design system, Gantt dashboard), bug fixes, and documentation cleanup.
+
+Both tools were used under the direction of the project author, who designed the system, defined requirements, and made all architectural decisions.
+
 ## License
 
 See [LICENSE](./LICENSE)
