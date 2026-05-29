@@ -155,8 +155,8 @@ docker compose up --build -d
 
 At backend startup, CRAGS bootstraps a super admin user from `.env`:
 
-- Username: `SUPERADMIN_USERNAME`
-- Password: `SUPERADMIN_PASSWORD`
+- Username: value of `SUPERADMIN_USERNAME` in `.env` (default: `superadmin`)
+- Password: value of `SUPERADMIN_PASSWORD` in `.env` (default: `change-me`)
 
 Use these credentials on the login screen.
 

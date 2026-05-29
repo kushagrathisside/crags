@@ -134,7 +134,7 @@ The system creates a superadmin on startup when `SUPERADMIN_PASSWORD` is set in 
 
 - **Username**: `superadmin`
 - **Email**: `superadmin@crags.local`
-- **Password**: Value from `SUPERADMIN_PASSWORD` in `.env`
+- **Password**: Value from `SUPERADMIN_PASSWORD` in `.env` (default: `change-me`)
 
 ## Acknowledgements
 

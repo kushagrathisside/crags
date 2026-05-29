@@ -9,14 +9,14 @@ interface ThemeCtx {
   toggle: () => void
 }
 
-const Ctx = createContext<ThemeCtx>({ mode: "dark", toggle: () => {} })
+const Ctx = createContext<ThemeCtx>({ mode: "light", toggle: () => {} })
 
 function loadMode(): Mode {
   try {
     const stored = localStorage.getItem("crags-theme")
     if (stored === "light" || stored === "dark") return stored
   } catch {}
-  return "dark"
+  return "light"
 }
 
 export function AppThemeProvider({ children }: { children: ReactNode }) {
