@@ -1,7 +1,7 @@
 import { createTheme, type PaletteMode } from "@mui/material"
 
-export const FONT_MONO = '"JetBrains Mono", "Fira Code", "Courier New", monospace'
-export const FONT_SANS = '"Inter", "Segoe UI", sans-serif'
+export const FONT_MONO = '"Roboto Mono", "Courier New", monospace'
+export const FONT_SANS = '"Roboto", "Helvetica Neue", Arial, sans-serif'
 
 // ── Design-file colour tokens ──────────────────────────────────────────────────
 // Zinc neutrals (from design files)

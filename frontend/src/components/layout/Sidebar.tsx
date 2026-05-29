@@ -136,7 +136,7 @@ export function Sidebar({ expanded, onToggle, role, onLogout }: Props) {
           <Box>
             <Typography
               sx={{
-                fontFamily: '"JetBrains Mono", monospace',
+                fontFamily: '"Roboto Mono", monospace',
                 color: "text.primary",
                 lineHeight: 1.1,
                 fontWeight: 600,
@@ -147,7 +147,7 @@ export function Sidebar({ expanded, onToggle, role, onLogout }: Props) {
             >
               CRAGS
             </Typography>
-            <Typography sx={{ color: "text.secondary", fontSize: "0.58rem", lineHeight: 1, fontFamily: '"JetBrains Mono", monospace', letterSpacing: "0.04em" }}>
+            <Typography sx={{ color: "text.secondary", fontSize: "0.58rem", lineHeight: 1, fontFamily: '"Roboto Mono", monospace', letterSpacing: "0.04em" }}>
               compute control
             </Typography>
           </Box>
