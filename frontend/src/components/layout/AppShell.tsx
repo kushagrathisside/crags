@@ -52,12 +52,6 @@ export function AppShell() {
           display: "flex",
           flexDirection: "column",
           minWidth: 0,
-          ml: `${sidebarWidth}px`,
-          transition: (t) =>
-            t.transitions.create("margin-left", {
-              easing: t.transitions.easing.sharp,
-              duration: t.transitions.duration.leavingScreen,
-            }),
         }}
       >
         <TopBar sidebarWidth={sidebarWidth} user={user} liveCount={liveCount} />
