@@ -155,6 +155,21 @@ export function BookingRequestForm({
   const canAdvance = !stepHasBlockingIssue(activeStep, draft, issues)
   const canSubmit = !hasBlockingIssues && apiValidated && !busy
 
+  // Only surface errors for steps the user has already reached
+  const visibleIssues = issues.filter((issue) => {
+    if (issue.field === "project" || issue.field === "objective") return activeStep >= 4
+    if (issue.field === "resources") return activeStep >= 2
+    if (issue.field === "time") return activeStep >= 1
+    return true
+  })
+
+  // Slider caps: selected system capacity, or max across all systems when nothing is selected
+  const selectedSystem = systems.find((s) => s.id === draft.systemId)
+  const maxCpu  = selectedSystem?.cpu_cores ?? Math.max(1,  ...systems.map((s) => s.cpu_cores   ?? 1))
+  const maxGpu  = selectedSystem?.gpu_units ?? Math.max(1,  ...systems.map((s) => s.gpu_units   ?? 0))
+  const maxRam  = selectedSystem?.ram_gb    ?? Math.max(1,  ...systems.map((s) => s.ram_gb      ?? 1))
+  const maxVram = selectedSystem?.vram_gb   ?? Math.max(1,  ...systems.map((s) => s.vram_gb     ?? 0))
+
   return (
     <Card variant="outlined">
       <CardContent>
@@ -171,9 +186,9 @@ export function BookingRequestForm({
 
           {backendMessage ? <Alert severity="success">{backendMessage}</Alert> : null}
 
-          {issues.length ? (
+          {visibleIssues.length ? (
             <Alert severity="warning">
-              {issues.map((issue) => `${issue.field}: ${issue.message}`).join(" | ")}
+              {visibleIssues.map((issue) => `${issue.field}: ${issue.message}`).join(" | ")}
             </Alert>
           ) : null}
 
@@ -264,23 +279,23 @@ export function BookingRequestForm({
               </Typography>
 
               <Box>
-                <Typography gutterBottom>CPU: {draft.reqCpu}</Typography>
-                <Slider value={draft.reqCpu} min={1} max={256} step={1} valueLabelDisplay="auto" onChange={(_, value) => onChange({ ...draft, reqCpu: Number(Array.isArray(value) ? value[0] : value) })} />
+                <Typography gutterBottom>CPU: {draft.reqCpu} / {maxCpu}</Typography>
+                <Slider value={draft.reqCpu} min={1} max={maxCpu} step={1} valueLabelDisplay="auto" onChange={(_, value) => onChange({ ...draft, reqCpu: Number(Array.isArray(value) ? value[0] : value) })} />
               </Box>
 
               <Box>
-                <Typography gutterBottom>GPU: {draft.reqGpu}</Typography>
-                <Slider value={draft.reqGpu} min={0} max={32} step={1} valueLabelDisplay="auto" onChange={(_, value) => onChange({ ...draft, reqGpu: Number(Array.isArray(value) ? value[0] : value) })} />
+                <Typography gutterBottom>GPU: {draft.reqGpu} / {maxGpu}</Typography>
+                <Slider value={draft.reqGpu} min={0} max={maxGpu} step={1} valueLabelDisplay="auto" onChange={(_, value) => onChange({ ...draft, reqGpu: Number(Array.isArray(value) ? value[0] : value) })} />
               </Box>
 
               <Box>
-                <Typography gutterBottom>RAM GB: {draft.reqRam}</Typography>
-                <Slider value={draft.reqRam} min={1} max={2048} step={1} valueLabelDisplay="auto" onChange={(_, value) => onChange({ ...draft, reqRam: Number(Array.isArray(value) ? value[0] : value) })} />
+                <Typography gutterBottom>RAM GB: {draft.reqRam} / {maxRam}</Typography>
+                <Slider value={draft.reqRam} min={1} max={maxRam} step={1} valueLabelDisplay="auto" onChange={(_, value) => onChange({ ...draft, reqRam: Number(Array.isArray(value) ? value[0] : value) })} />
               </Box>
 
               <Box>
-                <Typography gutterBottom>VRAM GB: {draft.reqVram}</Typography>
-                <Slider value={draft.reqVram} min={0} max={1024} step={1} valueLabelDisplay="auto" onChange={(_, value) => onChange({ ...draft, reqVram: Number(Array.isArray(value) ? value[0] : value) })} />
+                <Typography gutterBottom>VRAM GB: {draft.reqVram} / {maxVram}</Typography>
+                <Slider value={draft.reqVram} min={0} max={maxVram} step={1} valueLabelDisplay="auto" onChange={(_, value) => onChange({ ...draft, reqVram: Number(Array.isArray(value) ? value[0] : value) })} />
               </Box>
             </Stack>
           ) : null}
