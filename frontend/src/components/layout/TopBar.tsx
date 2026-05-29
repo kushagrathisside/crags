@@ -35,7 +35,6 @@ export function TopBar({ sidebarWidth, user, liveCount }: Props) {
   const { pathname } = useLocation()
 
   const title = PAGE_TITLES[pathname] ?? "CRAGS"
-  const gradient = "linear-gradient(135deg, #00B4D8 0%, #00E5A0 80%)"
 
   return (
     <AppBar
@@ -48,28 +47,15 @@ export function TopBar({ sidebarWidth, user, liveCount }: Props) {
           easing: theme.transitions.easing.sharp,
           duration: theme.transitions.duration.leavingScreen,
         }),
-        background: dark
-          ? "rgba(8,12,20,0.82)"
-          : "rgba(240,249,255,0.88)",
-        backdropFilter: "blur(20px)",
-        borderBottom: `1px solid ${dark ? "rgba(0,180,216,0.1)" : "rgba(0,119,182,0.08)"}`,
+        background: theme.palette.background.paper,
+        borderBottom: `1px solid ${theme.palette.divider}`,
         color: "text.primary",
       }}
     >
       <Toolbar sx={{ gap: 1.5, minHeight: "64px !important" }}>
         {/* Page title */}
         <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Typography
-            variant="h6"
-            sx={{
-              background: gradient,
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-              fontWeight: 700,
-              letterSpacing: "-0.01em",
-            }}
-          >
+          <Typography variant="h6" sx={{ fontWeight: 500, color: "text.primary" }}>
             {title}
           </Typography>
 
@@ -81,21 +67,11 @@ export function TopBar({ sidebarWidth, user, liveCount }: Props) {
                   width: 8,
                   height: 8,
                   borderRadius: "50%",
-                  background: "#00E5A0",
-                  boxShadow: "0 0 8px rgba(0,229,160,0.8)",
+                  background: "success.main",
                   flexShrink: 0,
-                  position: "relative",
-                  "&::after": {
-                    content: '""',
-                    position: "absolute",
-                    inset: 0,
-                    borderRadius: "50%",
-                    background: "#00E5A0",
-                    animation: "pulse-ring 2s ease-out infinite",
-                  },
                 }}
               />
-              <Typography variant="caption" sx={{ color: "#00E5A0", fontFamily: FONT_MONO, fontWeight: 600 }}>
+              <Typography variant="caption" sx={{ color: "text.secondary", fontFamily: FONT_MONO, fontWeight: 500 }}>
                 {liveCount} live
               </Typography>
             </Box>
@@ -119,13 +95,12 @@ export function TopBar({ sidebarWidth, user, liveCount }: Props) {
         <Chip
           label={`${user.username} · ${user.role}`}
           size="small"
+          variant="outlined"
           sx={{
             fontFamily: FONT_MONO,
             fontSize: "0.68rem",
             height: 26,
-            background: dark ? "rgba(0,180,216,0.12)" : "rgba(0,119,182,0.08)",
-            border: `1px solid ${dark ? "rgba(0,180,216,0.25)" : "rgba(0,119,182,0.2)"}`,
-            color: "primary.main",
+            color: "text.secondary",
           }}
         />
       </Toolbar>

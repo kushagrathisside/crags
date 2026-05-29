@@ -108,8 +108,8 @@ export function LoginPage() {
             sx={{
               width: 40,
               height: 40,
-              borderRadius: "4px",
-              background: "oklch(0.62 0.19 255)",
+              borderRadius: "8px",
+              background: "primary.main",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

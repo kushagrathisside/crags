@@ -21,12 +21,11 @@ import {
   TextField,
   Tooltip,
   Typography,
-  useTheme,
 } from "@mui/material"
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { approveBooking, rejectBooking } from "../../api/cragsApi"
-import { FONT_MONO } from "../../theme"
+import { FONT_MONO, statusTone } from "../../theme"
 
 function RejectDialog({ bookingId, open, onClose }: { bookingId: number; open: boolean; onClose: () => void }) {
   const queryClient = useQueryClient()
@@ -70,8 +69,6 @@ function RejectDialog({ bookingId, open, onClose }: { bookingId: number; open: b
 }
 
 export function ApprovalQueuePanel() {
-  const theme = useTheme()
-  const dark = theme.palette.mode === "dark"
   const queryClient = useQueryClient()
   const [rejectId, setRejectId] = useState<number | null>(null)
 
@@ -92,7 +89,7 @@ export function ApprovalQueuePanel() {
     return (
       <Card>
         <CardContent sx={{ p: 3, textAlign: "center" }}>
-          <CheckCircleOutlineRounded sx={{ fontSize: 36, color: "#00E5A0", mb: 1 }} />
+          <CheckCircleOutlineRounded sx={{ fontSize: 36, color: "success.main", mb: 1 }} />
           <Typography color="text.secondary" variant="body2">No pending approvals</Typography>
         </CardContent>
       </Card>
@@ -107,12 +104,12 @@ export function ApprovalQueuePanel() {
             <Typography variant="caption" sx={{ fontFamily: FONT_MONO, color: "text.secondary", fontWeight: 600, letterSpacing: "0.08em" }}>
               PENDING APPROVALS
             </Typography>
-            <Chip label={requested.length} size="small" sx={{ fontFamily: FONT_MONO, fontSize: "0.6rem", height: 18, background: "rgba(255,166,0,0.15)", color: "#FFA600" }} />
+            <Chip label={requested.length} size="small" sx={{ fontFamily: FONT_MONO, fontSize: "0.6rem", height: 18, background: statusTone("REQUESTED").bg, color: "warning.main" }} />
           </Box>
           <TableContainer>
             <Table size="small">
               <TableHead>
-                <TableRow sx={{ "& th": { fontFamily: FONT_MONO, fontSize: "0.65rem", color: "text.secondary", fontWeight: 600, letterSpacing: "0.06em", borderBottom: `1px solid ${dark ? "rgba(0,180,216,0.12)" : "rgba(0,119,182,0.1)"}` } }}>
+                <TableRow sx={{ "& th": { fontFamily: FONT_MONO, fontSize: "0.65rem", color: "text.secondary", fontWeight: 600, letterSpacing: "0.06em", borderBottom: 1, borderColor: "divider" } }}>
                   <TableCell>#</TableCell>
                   <TableCell>PROJECT</TableCell>
                   <TableCell align="right">CPU</TableCell>
@@ -124,7 +121,7 @@ export function ApprovalQueuePanel() {
               </TableHead>
               <TableBody>
                 {requested.map((b) => (
-                  <TableRow key={b.id} sx={{ "&:hover": { background: dark ? "rgba(0,180,216,0.04)" : "rgba(0,119,182,0.03)" }, "& td": { fontFamily: FONT_MONO, fontSize: "0.72rem", py: 1 } }}>
+                  <TableRow key={b.id} sx={{ "&:hover": { background: "action.hover" }, "& td": { fontFamily: FONT_MONO, fontSize: "0.72rem", py: 1 } }}>
                     <TableCell>
                       <Typography variant="caption" sx={{ fontFamily: FONT_MONO, color: "text.secondary" }}>#{b.id}</Typography>
                     </TableCell>
@@ -141,7 +138,7 @@ export function ApprovalQueuePanel() {
                         <Tooltip title="Approve">
                           <IconButton
                             size="small"
-                            sx={{ color: "#00E5A0" }}
+                            sx={{ color: "success.main" }}
                             disabled={approveMutation.isPending}
                             onClick={() => approveMutation.mutate(b.id)}
                           >

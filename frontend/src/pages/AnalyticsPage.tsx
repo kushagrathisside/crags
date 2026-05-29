@@ -30,7 +30,7 @@ import {
   Legend,
 } from "recharts"
 import { getAnalytics, getAnalyticsCsvUrl } from "../api/cragsApi"
-import { FONT_MONO } from "../theme"
+import { BRAND, FONT_MONO } from "../theme"
 
 const PERIODS = [
   { label: "Last 7 days", days: 7 },
@@ -50,14 +50,13 @@ function SectionHeader({ title }: { title: string }) {
 }
 
 function StatCard({ label, value, unit }: { label: string; value: number; unit: string }) {
-  useTheme()
   return (
     <Card sx={{ flex: 1, minWidth: 140 }}>
       <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
         <Typography variant="caption" color="text.secondary" sx={{ fontFamily: FONT_MONO, fontSize: "0.65rem" }}>
           {label}
         </Typography>
-        <Typography variant="h5" sx={{ fontFamily: FONT_MONO, fontWeight: 700, mt: 0.5, color: "#00B4D8" }}>
+        <Typography variant="h5" sx={{ fontFamily: FONT_MONO, fontWeight: 700, mt: 0.5, color: "primary.main" }}>
           {value.toLocaleString(undefined, { maximumFractionDigits: 1 })}
           <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.5, fontFamily: FONT_MONO }}>
             {unit}
@@ -109,7 +108,7 @@ export function AnalyticsPage() {
       {/* Header */}
       <Stack direction="row" justifyContent="space-between" alignItems="center">
         <Stack direction="row" spacing={1.5} alignItems="center">
-          <BarChartRounded sx={{ color: "#00B4D8" }} />
+          <BarChartRounded sx={{ color: "primary.main" }} />
           <Typography variant="h6" fontWeight={700}>Analytics & Reporting</Typography>
         </Stack>
         <Stack direction="row" spacing={1.5} alignItems="center">
@@ -161,11 +160,11 @@ export function AnalyticsPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke={dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"} />
                   <XAxis dataKey="name" tick={{ fontFamily: FONT_MONO, fontSize: 10 }} />
                   <YAxis tick={{ fontFamily: FONT_MONO, fontSize: 10 }} />
-                  <Tooltip contentStyle={{ fontFamily: FONT_MONO, fontSize: "0.7rem", background: dark ? "#0D1526" : "#fff" }} />
+                  <Tooltip contentStyle={{ fontFamily: FONT_MONO, fontSize: "0.7rem", background: dark ? "#282A2D" : "#fff" }} />
                   <Legend wrapperStyle={{ fontFamily: FONT_MONO, fontSize: "0.7rem" }} />
-                  <Bar dataKey="CPU" fill="#00B4D8" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="GPU" fill="#7C3AED" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="RAM" fill="#00E5A0" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="CPU" fill={BRAND.blue} radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="GPU" fill={BRAND.purple} radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="RAM" fill={BRAND.green} radius={[3, 3, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -180,11 +179,11 @@ export function AnalyticsPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke={dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"} />
                   <XAxis dataKey="name" tick={{ fontFamily: FONT_MONO, fontSize: 10 }} />
                   <YAxis domain={[0, 100]} tick={{ fontFamily: FONT_MONO, fontSize: 10 }} unit="%" />
-                  <Tooltip contentStyle={{ fontFamily: FONT_MONO, fontSize: "0.7rem", background: dark ? "#0D1526" : "#fff" }} />
+                  <Tooltip contentStyle={{ fontFamily: FONT_MONO, fontSize: "0.7rem", background: dark ? "#282A2D" : "#fff" }} />
                   <Legend wrapperStyle={{ fontFamily: FONT_MONO, fontSize: "0.7rem" }} />
-                  <Bar dataKey="CPU" fill="#00B4D8" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="GPU" fill="#7C3AED" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="RAM" fill="#00E5A0" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="CPU" fill={BRAND.blue} radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="GPU" fill={BRAND.purple} radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="RAM" fill={BRAND.green} radius={[3, 3, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>

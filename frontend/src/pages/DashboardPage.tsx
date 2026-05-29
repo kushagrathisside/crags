@@ -15,22 +15,15 @@ import {
   Skeleton,
   Stack,
   Typography,
-  useTheme,
 } from "@mui/material"
 import { useMemo } from "react"
 import { useBookingsQuery } from "../hooks/useBookingsQuery"
 import { useCurrentUserQuery } from "../hooks/useCurrentUserQuery"
 import { useSystemsQuery } from "../hooks/useSystemsQuery"
-import { FONT_MONO } from "../theme"
+import { BRAND, FONT_MONO, statusTone } from "../theme"
 import { MissionControlDashboard } from "../components/panels/MissionControlDashboard"
 import { TemporalGantt } from "../components/charts/TemporalGantt"
 import type { BookingStatus } from "../types/crags"
-
-const STATUS_COLOR: Record<string, string> = {
-  ACTIVE:      "#00E5A0",
-  MAINTENANCE: "#FFA600",
-  OFFLINE:     "#FF4560",
-}
 
 interface StatCardProps {
   icon: React.ReactNode
@@ -41,10 +34,7 @@ interface StatCardProps {
   loading?: boolean
 }
 
-function StatCard({ icon, label, value, sub, color = "#00B4D8", loading }: StatCardProps) {
-  const theme = useTheme()
-  const dark = theme.palette.mode === "dark"
-
+function StatCard({ icon, label, value, sub, color = BRAND.blue, loading }: StatCardProps) {
   return (
     <Card sx={{ height: "100%" }}>
       <CardContent sx={{ p: 2.5 }}>
@@ -53,15 +43,13 @@ function StatCard({ icon, label, value, sub, color = "#00B4D8", loading }: StatC
             sx={{
               width: 40,
               height: 40,
-              borderRadius: "10px",
-              background: `${color}18`,
-              border: `1px solid ${color}30`,
+              borderRadius: "8px",
+              background: `${color}14`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               color,
               flexShrink: 0,
-              filter: dark ? `drop-shadow(0 0 6px ${color}55)` : "none",
             }}
           >
             {icon}
@@ -123,7 +111,7 @@ export function DashboardPage() {
               label="ACTIVE SYSTEMS"
               value={stats.active}
               sub={`${stats.maint} maintenance · ${stats.offline} offline`}
-              color="#00B4D8"
+              color={BRAND.blue}
               loading={loading}
             />
           </Grid>
@@ -133,7 +121,7 @@ export function DashboardPage() {
               label="RUNNING JOBS"
               value={stats.running}
               sub="confirmed + requested"
-              color="#00E5A0"
+              color={BRAND.green}
               loading={loading}
             />
           </Grid>
@@ -143,7 +131,7 @@ export function DashboardPage() {
               label="TODAY'S BOOKINGS"
               value={stats.todayBookings}
               sub="starting today"
-              color="#7C3AED"
+              color={BRAND.purple}
               loading={loading}
             />
           </Grid>
@@ -153,7 +141,7 @@ export function DashboardPage() {
               label="TOTAL SYSTEMS"
               value={systems.length}
               sub="in inventory"
-              color="#FFA600"
+              color={BRAND.amber}
               loading={loading}
             />
           </Grid>
@@ -167,18 +155,17 @@ export function DashboardPage() {
                 <Typography variant="caption" color="text.secondary" sx={{ fontFamily: FONT_MONO, mr: 0.5 }}>
                   SYSTEMS
                 </Typography>
-                {systems.map((sys) => (
-                  <Chip
-                    key={sys.id}
-                    label={sys.name}
-                    size="small"
-                    sx={{
-                      background: `${STATUS_COLOR[sys.status] ?? "#888"}18`,
-                      border: `1px solid ${STATUS_COLOR[sys.status] ?? "#888"}40`,
-                      color: STATUS_COLOR[sys.status] ?? "text.secondary",
-                    }}
-                  />
-                ))}
+                {systems.map((sys) => {
+                  const tone = statusTone(sys.status)
+                  return (
+                    <Chip
+                      key={sys.id}
+                      label={sys.name}
+                      size="small"
+                      sx={{ background: tone.bg, color: tone.color }}
+                    />
+                  )
+                })}
               </Stack>
             </CardContent>
           </Card>

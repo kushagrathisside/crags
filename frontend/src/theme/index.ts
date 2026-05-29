@@ -1,162 +1,182 @@
 import { createTheme, type PaletteMode } from "@mui/material"
 
-export const FONT_MONO = '"Roboto Mono", "Courier New", monospace'
-export const FONT_SANS = '"Roboto", "Helvetica Neue", Arial, sans-serif'
+// ─────────────────────────────────────────────────────────────────────────────
+// CRAGS design system — SINGLE SOURCE OF TRUTH.
+// Change colours / fonts / radius here and the whole app follows.
+// No component should hardcode a hex value; import from this file instead.
+// Palette follows Google Material (Workspace) for a clean, academic, professional feel.
+// ─────────────────────────────────────────────────────────────────────────────
 
-// ── Design-file colour tokens ──────────────────────────────────────────────────
-// Zinc neutrals (from design files)
-const zinc = {
-  50:  "#F6F6F5",
-  100: "#F2F2F1",
-  200: "#E4E4E2",
-  400: "#A1A1AA",
-  500: "#71717A",
-  900: "#18181B",
-  950: "#0A0D10",
+export const FONT_SANS = '"Roboto", "Helvetica Neue", Arial, sans-serif'
+export const FONT_MONO = '"Roboto Mono", "Courier New", monospace'
+
+// Brand / accent colours (Google Material)
+export const BRAND = {
+  blue:   "#1A73E8",
+  green:  "#1E8E3E",
+  amber:  "#F9AB00",
+  red:    "#D93025",
+  purple: "#9334E6",
+  teal:   "#12A4AF",
 }
 
-// Accent colours — hex equivalents of the oklch values used in the designs:
-//   oklch(0.62 0.19 255) ≈ #1E85F4   blue / primary
-//   oklch(0.62 0.19 200) ≈ #00A4B3   teal / secondary & success
-//   oklch(0.58 0.21 25)  ≈ #DB2B28   red  / error & preempted
-//   oklch(0.62 0.19 60)  ≈ #D46100   amber / warning & requested
-export const CLR_BLUE  = "#1E85F4"   // oklch(0.62 0.19 255)
-export const CLR_TEAL  = "#00A4B3"   // oklch(0.62 0.19 200)
-export const CLR_RED   = "#DB2B28"   // oklch(0.58 0.21 25)
-export const CLR_AMBER = "#D46100"   // oklch(0.62 0.19 60)
+// Backwards-compatible aliases (kept so older references keep resolving)
+export const CLR_BLUE  = BRAND.blue
+export const CLR_TEAL  = BRAND.teal
+export const CLR_RED   = BRAND.red
+export const CLR_AMBER = BRAND.amber
 
-// Use these CSS colour strings directly in sx props for pixel-perfect rendering:
-export const OKLCH_BLUE  = "oklch(0.62 0.19 255)"
-export const OKLCH_TEAL  = "oklch(0.62 0.19 200)"
-export const OKLCH_RED   = "oklch(0.58 0.21 25)"
-export const OKLCH_AMBER = "oklch(0.62 0.19 60)"
+// Neutral greys (Google)
+const grey = {
+  50:  "#F8F9FA",
+  100: "#F1F3F4",
+  200: "#E8EAED",
+  300: "#DADCE0",
+  500: "#9AA0A6",
+  600: "#5F6368",
+  800: "#3C4043",
+  900: "#202124",
+}
+
+// Dark-mode surfaces
+const darkSurface = {
+  default: "#1F1F1F",
+  paper:   "#282A2D",
+  border:  "rgba(255,255,255,0.10)",
+}
+
+// ── Semantic status colours — import these instead of hardcoding hex ──────────
+export type StatusTone = { color: string; bg: string }
+
+const NEUTRAL_TONE: StatusTone = { color: grey[600], bg: "rgba(95,99,104,0.12)" }
+
+export const STATUS_COLOR: Record<string, StatusTone> = {
+  // system status
+  ACTIVE:      { color: BRAND.green, bg: "rgba(30,142,62,0.12)" },
+  MAINTENANCE: { color: BRAND.amber, bg: "rgba(249,171,0,0.14)" },
+  OFFLINE:     { color: BRAND.red,   bg: "rgba(217,48,37,0.12)" },
+  // booking / waitlist status
+  CONFIRMED:   { color: BRAND.blue,  bg: "rgba(26,115,232,0.12)" },
+  REQUESTED:   { color: BRAND.amber, bg: "rgba(249,171,0,0.14)" },
+  WAITING:     { color: BRAND.amber, bg: "rgba(249,171,0,0.14)" },
+  PROMOTED:    { color: BRAND.green, bg: "rgba(30,142,62,0.12)" },
+  PREEMPTED:   { color: BRAND.red,   bg: "rgba(217,48,37,0.12)" },
+  COMPLETED:   NEUTRAL_TONE,
+  EXPIRED:     NEUTRAL_TONE,
+  CANCELLED:   NEUTRAL_TONE,
+}
+
+export function statusTone(status: string): StatusTone {
+  return STATUS_COLOR[status] ?? NEUTRAL_TONE
+}
+
+// Chart series palette
+export const CHART_COLORS = [BRAND.blue, BRAND.green, BRAND.amber, BRAND.purple, BRAND.red, BRAND.teal]
 
 export function buildTheme(mode: PaletteMode) {
   const dark = mode === "dark"
+  const border = dark ? darkSurface.border : grey[200]
 
   return createTheme({
     palette: {
       mode,
-      primary:   { main: CLR_BLUE,  contrastText: "#fff" },
-      secondary: { main: CLR_TEAL,  contrastText: "#fff" },
-      error:     { main: CLR_RED },
-      warning:   { main: CLR_AMBER },
-      success:   { main: CLR_TEAL },
+      primary:   { main: BRAND.blue,   contrastText: "#fff" },
+      secondary: { main: BRAND.purple, contrastText: "#fff" },
+      success:   { main: BRAND.green },
+      warning:   { main: BRAND.amber },
+      error:     { main: BRAND.red },
+      info:      { main: BRAND.blue },
       background: {
-        default: dark ? zinc[950] : zinc[50],
-        paper:   dark ? zinc[900] : "#FFFFFF",
+        default: dark ? darkSurface.default : grey[50],
+        paper:   dark ? darkSurface.paper   : "#FFFFFF",
       },
-      divider: dark ? "rgba(228,228,226,0.08)" : zinc[200],
+      divider: dark ? darkSurface.border : grey[300],
       text: {
-        primary:   dark ? zinc[100] : zinc[900],
-        secondary: dark ? zinc[400] : zinc[500],
+        primary:   dark ? "#E8EAED" : grey[900],
+        secondary: dark ? "#9AA0A6" : grey[600],
       },
     },
 
-    shape: { borderRadius: 4 },
+    shape: { borderRadius: 8 },
 
     typography: {
       fontFamily: FONT_SANS,
-      h1: { fontWeight: 700, letterSpacing: "-0.025em" },
-      h2: { fontWeight: 700, letterSpacing: "-0.02em" },
-      h3: { fontWeight: 600, letterSpacing: "-0.015em" },
-      h4: { fontWeight: 600, letterSpacing: "-0.01em" },
-      h5: { fontWeight: 600 },
-      h6: { fontWeight: 600 },
+      h1: { fontWeight: 500, letterSpacing: "-0.02em" },
+      h2: { fontWeight: 500, letterSpacing: "-0.015em" },
+      h3: { fontWeight: 500, letterSpacing: "-0.01em" },
+      h4: { fontWeight: 500 },
+      h5: { fontWeight: 500 },
+      h6: { fontWeight: 500 },
       subtitle1: { fontWeight: 500 },
-      subtitle2: { fontWeight: 600, letterSpacing: "0.04em" },
+      subtitle2: { fontWeight: 500 },
+      button: { textTransform: "none", fontWeight: 500 },
       body1: { lineHeight: 1.6 },
       body2: { lineHeight: 1.5 },
-      caption: { fontFamily: FONT_MONO, letterSpacing: "0.06em", fontSize: "0.7rem" },
-      overline: { fontFamily: FONT_MONO, letterSpacing: "0.1em", fontSize: "0.65rem", fontWeight: 600 },
+      caption: { fontFamily: FONT_MONO, letterSpacing: "0.02em", fontSize: "0.72rem" },
     },
 
     components: {
       MuiCssBaseline: {
         styleOverrides: {
           ":root": {
-            "--scrollbar-thumb":       dark ? `${CLR_BLUE}44` : `${zinc[400]}88`,
-            "--scrollbar-thumb-hover": dark ? `${CLR_BLUE}77` : zinc[400],
+            "--scrollbar-thumb":       dark ? "rgba(255,255,255,0.2)"  : grey[300],
+            "--scrollbar-thumb-hover": dark ? "rgba(255,255,255,0.35)" : grey[500],
           },
         },
       },
 
       MuiCard: {
+        defaultProps: { elevation: 0 },
         styleOverrides: {
           root: {
             backgroundImage: "none",
-            background: dark ? zinc[900] : "#FFFFFF",
-            border: `1px solid ${dark ? "rgba(228,228,226,0.07)" : zinc[200]}`,
+            border: `1px solid ${border}`,
+            borderRadius: 8,
             boxShadow: "none",
           },
         },
       },
 
       MuiCardContent: {
-        styleOverrides: {
-          root: { "&:last-child": { paddingBottom: 16 } },
-        },
+        styleOverrides: { root: { "&:last-child": { paddingBottom: 16 } } },
       },
 
       MuiButton: {
+        defaultProps: { disableElevation: true },
         styleOverrides: {
-          root: {
-            textTransform: "none",
-            fontWeight: 600,
-            letterSpacing: "0.01em",
-            boxShadow: "none",
-            "&:hover": { boxShadow: "none" },
-            "&:active": { boxShadow: "none" },
-          },
-          containedPrimary: {
-            background: CLR_BLUE,
-            "&:hover": { background: "#1A78DC" },
-          },
-          containedSecondary: {
-            background: CLR_TEAL,
-            "&:hover": { background: "#009AAA" },
-          },
-          outlinedPrimary: {
-            borderColor: dark ? `${CLR_BLUE}66` : `${CLR_BLUE}88`,
-            "&:hover": {
-              borderColor: CLR_BLUE,
-              background: `${CLR_BLUE}0D`,
-            },
-          },
+          root: { borderRadius: 8, fontWeight: 500, boxShadow: "none" },
         },
       },
 
       MuiChip: {
         styleOverrides: {
-          root: {
-            fontFamily: FONT_MONO,
-            fontSize: "0.68rem",
-            fontWeight: 600,
-            letterSpacing: "0.05em",
-            height: 22,
-            borderRadius: 4,
-          },
+          root: { fontFamily: FONT_MONO, fontWeight: 500, fontSize: "0.7rem", borderRadius: 6 },
         },
       },
 
       MuiLinearProgress: {
         styleOverrides: {
-          root: { borderRadius: 2, height: 4 },
+          root: { borderRadius: 4, height: 6 },
         },
       },
 
       MuiAlert: {
-        styleOverrides: {
-          root: { borderRadius: 4 },
-        },
+        styleOverrides: { root: { borderRadius: 8 } },
       },
 
       MuiDrawer: {
         styleOverrides: {
           paper: {
-            background: dark ? zinc[950] : "#FFFFFF",
-            borderRight: `1px solid ${dark ? "rgba(228,228,226,0.07)" : zinc[200]}`,
+            backgroundImage: "none",
+            background: dark ? darkSurface.paper : "#FFFFFF",
+            borderRight: `1px solid ${border}`,
           },
+        },
+      },
+
+      MuiAppBar: {
+        styleOverrides: {
+          root: { backgroundImage: "none" },
         },
       },
 
@@ -164,41 +184,34 @@ export function buildTheme(mode: PaletteMode) {
         styleOverrides: {
           root: {
             "& .MuiOutlinedInput-root": {
-              borderRadius: 4,
-              "& fieldset": { borderColor: dark ? "rgba(228,228,226,0.15)" : zinc[200] },
-              "&:hover fieldset": { borderColor: dark ? zinc[400] : zinc[500] },
-              "&.Mui-focused fieldset": { borderColor: CLR_BLUE },
+              borderRadius: 8,
+              "& fieldset": { borderColor: dark ? darkSurface.border : grey[300] },
+              "&:hover fieldset": { borderColor: dark ? "rgba(255,255,255,0.3)" : grey[500] },
+              "&.Mui-focused fieldset": { borderColor: BRAND.blue },
             },
           },
         },
       },
 
       MuiTab: {
-        styleOverrides: {
-          root: { textTransform: "none", fontWeight: 600 },
-        },
+        styleOverrides: { root: { textTransform: "none", fontWeight: 500 } },
       },
 
       MuiDivider: {
-        styleOverrides: {
-          root: {
-            borderColor: dark ? "rgba(228,228,226,0.07)" : zinc[200],
-          },
-        },
+        styleOverrides: { root: { borderColor: dark ? darkSurface.border : grey[200] } },
       },
 
       MuiListItemButton: {
         styleOverrides: {
           root: {
-            borderRadius: 4,
-            margin: "1px 6px",
+            borderRadius: 8,
+            margin: "1px 8px",
             "&.Mui-selected": {
-              background: dark ? `${CLR_BLUE}18` : `${CLR_BLUE}12`,
-              borderLeft: `2px solid ${CLR_BLUE}`,
-              paddingLeft: "14px",
-              "&:hover": { background: dark ? `${CLR_BLUE}22` : `${CLR_BLUE}18` },
+              background: dark ? "rgba(26,115,232,0.18)" : "rgba(26,115,232,0.10)",
+              color: BRAND.blue,
+              "&:hover": { background: dark ? "rgba(26,115,232,0.24)" : "rgba(26,115,232,0.16)" },
             },
-            "&:hover": { background: dark ? "rgba(228,228,226,0.05)" : `${CLR_BLUE}08` },
+            "&:hover": { background: dark ? "rgba(255,255,255,0.06)" : grey[100] },
           },
         },
       },
@@ -206,19 +219,16 @@ export function buildTheme(mode: PaletteMode) {
       MuiTooltip: {
         styleOverrides: {
           tooltip: {
-            fontFamily: FONT_MONO,
-            fontSize: "0.7rem",
-            background: dark ? zinc[200] : zinc[900],
-            color: dark ? zinc[900] : zinc[50],
-            borderRadius: 4,
+            fontFamily: FONT_SANS,
+            fontSize: "0.72rem",
+            background: grey[800],
+            borderRadius: 6,
           },
         },
       },
 
       MuiPaper: {
-        styleOverrides: {
-          root: { backgroundImage: "none" },
-        },
+        styleOverrides: { root: { backgroundImage: "none" } },
       },
     },
   })

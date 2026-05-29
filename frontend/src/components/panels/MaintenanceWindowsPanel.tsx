@@ -29,7 +29,7 @@ import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createMaintenanceWindow, deleteMaintenanceWindow, listMaintenanceWindows } from "../../api/cragsApi"
 import type { ComputeSystem } from "../../types/crags"
-import { FONT_MONO } from "../../theme"
+import { FONT_MONO, statusTone } from "../../theme"
 
 type Props = { systems: ComputeSystem[] }
 
@@ -97,7 +97,7 @@ export function MaintenanceWindowsPanel({ systems }: Props) {
         <CardContent sx={{ p: 0 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ px: 2, py: 1.5 }}>
             <Stack direction="row" alignItems="center" spacing={1}>
-              <BuildRounded sx={{ fontSize: 16, color: "#FFA600" }} />
+              <BuildRounded sx={{ fontSize: 16, color: "warning.main" }} />
               <Typography variant="caption" sx={{ fontFamily: FONT_MONO, color: "text.secondary", fontWeight: 600, letterSpacing: "0.08em" }}>
                 MAINTENANCE WINDOWS
               </Typography>
@@ -133,7 +133,7 @@ export function MaintenanceWindowsPanel({ systems }: Props) {
                         <TableCell>
                           <Stack direction="row" alignItems="center" spacing={0.5}>
                             <span>{systemMap[w.system_id] ?? `#${w.system_id}`}</span>
-                            {isActive && <Chip label="ACTIVE" size="small" sx={{ height: 16, fontSize: "0.55rem", background: "rgba(255,166,0,0.15)", color: "#FFA600" }} />}
+                            {isActive && <Chip label="ACTIVE" size="small" sx={{ height: 16, fontSize: "0.55rem", background: statusTone("MAINTENANCE").bg, color: "warning.main" }} />}
                           </Stack>
                         </TableCell>
                         <TableCell>{new Date(w.start_time).toLocaleString()}</TableCell>

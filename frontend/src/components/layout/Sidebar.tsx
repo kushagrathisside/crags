@@ -123,7 +123,7 @@ export function Sidebar({ expanded, onToggle, role, onLogout }: Props) {
             width: 28,
             height: 28,
             borderRadius: "4px",
-            background: "oklch(0.62 0.19 255)",
+            background: "primary.main",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

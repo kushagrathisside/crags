@@ -1,13 +1,11 @@
 import { GroupsRounded } from "@mui/icons-material"
-import { Box, Chip, Stack, Typography, useTheme } from "@mui/material"
+import { Box, Chip, Stack, Typography } from "@mui/material"
 import { ErrorBoundary } from "../components/ErrorBoundary"
 import { TeamManagementPanel } from "../components/panels/TeamManagementPanel"
 import { useCurrentUserQuery } from "../hooks/useCurrentUserQuery"
 import { FONT_MONO } from "../theme"
 
 export function TeamPage() {
-  const theme = useTheme()
-  const dark  = theme.palette.mode === "dark"
   const currentUserQuery = useCurrentUserQuery()
   const role = currentUserQuery.data?.role ?? "MEMBER"
 
@@ -20,9 +18,8 @@ export function TeamPage() {
             sx={{
               width: 42,
               height: 42,
-              borderRadius: "10px",
-              background: dark ? "rgba(0,229,160,0.1)" : "rgba(0,168,112,0.08)",
-              border: `1px solid ${dark ? "rgba(0,229,160,0.22)" : "rgba(0,168,112,0.18)"}`,
+              borderRadius: "8px",
+              background: "action.hover",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -43,12 +40,8 @@ export function TeamPage() {
           <Chip
             label={role}
             size="small"
-            sx={{
-              fontFamily: FONT_MONO,
-              background: dark ? "rgba(0,229,160,0.1)" : "rgba(0,168,112,0.08)",
-              border: `1px solid ${dark ? "rgba(0,229,160,0.2)" : "rgba(0,168,112,0.15)"}`,
-              color: "secondary.main",
-            }}
+            variant="outlined"
+            sx={{ fontFamily: FONT_MONO, color: "text.secondary" }}
           />
         </Stack>
 

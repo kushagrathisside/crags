@@ -9,7 +9,6 @@ import {
   LinearProgress,
   Stack,
   Typography,
-  useTheme,
 } from "@mui/material"
 import { ErrorBoundary } from "../components/ErrorBoundary"
 import { SystemRegistrationForm } from "../components/forms/SystemRegistrationForm"
@@ -20,8 +19,6 @@ import { useSystemsQuery } from "../hooks/useSystemsQuery"
 import { FONT_MONO } from "../theme"
 
 export function SystemsPage() {
-  const theme = useTheme()
-  const dark  = theme.palette.mode === "dark"
   const currentUserQuery = useCurrentUserQuery()
   const systemsQuery     = useSystemsQuery(Boolean(currentUserQuery.data))
   const systems          = systemsQuery.data ?? []
@@ -39,9 +36,8 @@ export function SystemsPage() {
             sx={{
               width: 42,
               height: 42,
-              borderRadius: "10px",
-              background: dark ? "rgba(0,180,216,0.12)" : "rgba(0,119,182,0.08)",
-              border: `1px solid ${dark ? "rgba(0,180,216,0.25)" : "rgba(0,119,182,0.2)"}`,
+              borderRadius: "8px",
+              background: "action.hover",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -62,12 +58,8 @@ export function SystemsPage() {
           <Chip
             label={`${total} systems`}
             size="small"
-            sx={{
-              fontFamily: FONT_MONO,
-              background: dark ? "rgba(0,180,216,0.1)" : "rgba(0,119,182,0.08)",
-              border: `1px solid ${dark ? "rgba(0,180,216,0.2)" : "rgba(0,119,182,0.15)"}`,
-              color: "primary.main",
-            }}
+            variant="outlined"
+            sx={{ fontFamily: FONT_MONO, color: "text.secondary" }}
           />
         </Stack>
 

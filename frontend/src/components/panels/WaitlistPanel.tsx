@@ -23,21 +23,14 @@ import {
   TextField,
   Tooltip,
   Typography,
-  useTheme,
 } from "@mui/material"
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { cancelWaitlistEntry, joinWaitlist, listWaitlist } from "../../api/cragsApi"
 import type { ComputeSystem, WaitlistJoin } from "../../types/crags"
-import { FONT_MONO } from "../../theme"
+import { FONT_MONO, statusTone } from "../../theme"
 
 type Props = { systems: ComputeSystem[] }
-
-const STATUS_STYLE: Record<string, { color: string; bg: string }> = {
-  WAITING:   { color: "#FFA600", bg: "rgba(255,166,0,0.12)" },
-  PROMOTED:  { color: "#00E5A0", bg: "rgba(0,229,160,0.12)" },
-  CANCELLED: { color: "#888",    bg: "rgba(136,136,136,0.1)" },
-}
 
 function JoinDialog({ systems, open, onClose }: { systems: ComputeSystem[]; open: boolean; onClose: () => void }) {
   const queryClient = useQueryClient()
@@ -105,8 +98,6 @@ function JoinDialog({ systems, open, onClose }: { systems: ComputeSystem[]; open
 }
 
 export function WaitlistPanel({ systems }: Props) {
-  const theme = useTheme()
-  const dark = theme.palette.mode === "dark"
   const queryClient = useQueryClient()
   const [joinOpen, setJoinOpen] = useState(false)
 
@@ -129,7 +120,7 @@ export function WaitlistPanel({ systems }: Props) {
         <CardContent sx={{ p: 0 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ px: 2, py: 1.5 }}>
             <Stack direction="row" alignItems="center" spacing={1}>
-              <HourglassEmptyRounded sx={{ fontSize: 16, color: "#FFA600" }} />
+              <HourglassEmptyRounded sx={{ fontSize: 16, color: "warning.main" }} />
               <Typography variant="caption" sx={{ fontFamily: FONT_MONO, color: "text.secondary", fontWeight: 600, letterSpacing: "0.08em" }}>
                 WAITLIST
               </Typography>
@@ -137,7 +128,7 @@ export function WaitlistPanel({ systems }: Props) {
                 <Chip
                   label={entries.filter(e => e.status === "WAITING").length}
                   size="small"
-                  sx={{ height: 16, fontSize: "0.55rem", fontFamily: FONT_MONO, background: "rgba(255,166,0,0.15)", color: "#FFA600" }}
+                  sx={{ height: 16, fontSize: "0.55rem", fontFamily: FONT_MONO, background: statusTone("WAITING").bg, color: "warning.main" }}
                 />
               )}
             </Stack>
@@ -155,7 +146,7 @@ export function WaitlistPanel({ systems }: Props) {
             <TableContainer>
               <Table size="small">
                 <TableHead>
-                  <TableRow sx={{ "& th": { fontFamily: FONT_MONO, fontSize: "0.65rem", color: "text.secondary", fontWeight: 600, letterSpacing: "0.06em", borderBottom: `1px solid ${dark ? "rgba(0,180,216,0.12)" : "rgba(0,119,182,0.1)"}` } }}>
+                  <TableRow sx={{ "& th": { fontFamily: FONT_MONO, fontSize: "0.65rem", color: "text.secondary", fontWeight: 600, letterSpacing: "0.06em", borderBottom: 1, borderColor: "divider" } }}>
                     <TableCell>SYSTEM</TableCell>
                     <TableCell>PROJECT</TableCell>
                     <TableCell align="right">CPU</TableCell>
@@ -167,9 +158,9 @@ export function WaitlistPanel({ systems }: Props) {
                 </TableHead>
                 <TableBody>
                   {entries.map((e) => {
-                    const st = STATUS_STYLE[e.status] ?? STATUS_STYLE.CANCELLED
+                    const st = statusTone(e.status)
                     return (
-                      <TableRow key={e.id} sx={{ "& td": { fontFamily: FONT_MONO, fontSize: "0.72rem", py: 1 }, "&:hover": { background: dark ? "rgba(0,180,216,0.04)" : "rgba(0,119,182,0.03)" } }}>
+                      <TableRow key={e.id} sx={{ "& td": { fontFamily: FONT_MONO, fontSize: "0.72rem", py: 1 }, "&:hover": { background: "action.hover" } }}>
                         <TableCell>{systemMap[e.system_id] ?? `#${e.system_id}`}</TableCell>
                         <TableCell sx={{ maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {e.project_title ?? "—"}
@@ -179,7 +170,7 @@ export function WaitlistPanel({ systems }: Props) {
                         <TableCell align="right">{e.duration_hours}</TableCell>
                         <TableCell>
                           <Chip label={e.status} size="small"
-                            sx={{ fontFamily: FONT_MONO, fontSize: "0.6rem", height: 18, background: st.bg, color: st.color, border: `1px solid ${st.color}40` }} />
+                            sx={{ fontFamily: FONT_MONO, fontSize: "0.6rem", height: 18, background: st.bg, color: st.color }} />
                         </TableCell>
                         <TableCell align="right">
                           {e.status === "WAITING" && (

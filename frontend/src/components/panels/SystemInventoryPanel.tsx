@@ -25,21 +25,14 @@ import {
   TextField,
   Tooltip,
   Typography,
-  useTheme,
 } from "@mui/material"
 import type { ComputeSystem, SystemStatus, UpdateSystemRequest, UserRole } from "../../types/crags"
 import { updateSystem, deleteSystem } from "../../api/cragsApi"
-import { FONT_MONO } from "../../theme"
+import { FONT_MONO, statusTone } from "../../theme"
 
 type Props = {
   systems: ComputeSystem[]
   currentRole: UserRole | undefined
-}
-
-const STATUS_STYLE: Record<SystemStatus, { color: string; bg: string }> = {
-  ACTIVE:      { color: "#00E5A0", bg: "rgba(0,229,160,0.12)" },
-  MAINTENANCE: { color: "#FFA600", bg: "rgba(255,166,0,0.12)" },
-  OFFLINE:     { color: "#FF4560", bg: "rgba(255,69,96,0.12)"  },
 }
 
 function EditSystemDialog({ system, open, onClose }: { system: ComputeSystem; open: boolean; onClose: () => void }) {
@@ -125,8 +118,6 @@ function Grid2({ container, spacing, size, children }: { container?: boolean; sp
 }
 
 export function SystemInventoryPanel({ systems, currentRole }: Props) {
-  const theme   = useTheme()
-  const dark    = theme.palette.mode === "dark"
   const queryClient = useQueryClient()
   const [editTarget, setEditTarget] = useState<ComputeSystem | null>(null)
   const isAdmin = currentRole === "RESOURCE_ADMIN" || currentRole === "SUPER_ADMIN"
@@ -162,7 +153,8 @@ export function SystemInventoryPanel({ systems, currentRole }: Props) {
                       color: "text.secondary",
                       fontWeight: 600,
                       letterSpacing: "0.06em",
-                      borderBottom: `1px solid ${dark ? "rgba(0,180,216,0.12)" : "rgba(0,119,182,0.1)"}`,
+                      borderBottom: 1,
+                      borderColor: "divider",
                       py: 1.5,
                       px: 2,
                     },
@@ -188,13 +180,13 @@ export function SystemInventoryPanel({ systems, currentRole }: Props) {
               </TableHead>
               <TableBody>
                 {systems.map((sys) => {
-                  const st = STATUS_STYLE[sys.status] ?? { color: "#888", bg: "rgba(136,136,136,0.1)" }
+                  const st = statusTone(sys.status)
                   return (
                     <TableRow
                       key={sys.id}
                       sx={{
-                        "&:hover": { background: dark ? "rgba(0,180,216,0.04)" : "rgba(0,119,182,0.03)" },
-                        "& .MuiTableCell-body": { borderBottom: `1px solid ${dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)"}`, py: 1.25, px: 2 },
+                        "&:hover": { background: "action.hover" },
+                        "& .MuiTableCell-body": { borderBottom: 1, borderColor: "divider", py: 1.25, px: 2 },
                       }}
                     >
                       <TableCell>
