@@ -206,6 +206,9 @@ frontend/dist/
 frontend/node_modules/
 .agents/
 
+# Docs PDF generator (local tooling, not part of the shipped repo)
+docs/docs_gen.py
+
 # Design source exports (large HTML files, not needed in repo — tokens live in frontend/src/theme/)
 designs/
 

@@ -64,7 +64,7 @@ The frontend source lives under `frontend/src`.
 | `api/cragsApi.ts` | Typed wrappers for all backend endpoints. |
 | `hooks/` | React Query hooks for auth, systems, bookings, audit, availability, and mutations. |
 | `context/ThemeContext.tsx` | Dark/light mode with localStorage persistence. |
-| `theme/index.ts` | MUI theme factory (`buildTheme`); Space Grotesk + JetBrains Mono fonts. |
+| `theme/index.ts` | Centralised design system: `buildTheme(mode)` MUI factory plus exported `BRAND` palette, `STATUS_COLOR`/`statusTone()`, `CHART_COLORS`, and `FONT_SANS`/`FONT_MONO` (Roboto + Roboto Mono). Single source of truth for colour, typography, and shape. |
 | `pages/` | One file per route: Dashboard, Scheduler, Systems, Monitoring, Analytics, Team, Login. |
 | `components/layout/` | AppShell, Sidebar (collapsible), TopBar. |
 | `components/forms/` | Booking request form, system registration form. |
@@ -84,6 +84,23 @@ The frontend source lives under `frontend/src`.
 | `/analytics` | GROUP_LEAD+ | Usage charts, group table, CSV export |
 | `/team` | RESOURCE_ADMIN, SUPER_ADMIN | Team management |
 | `/login` | Public | Login form |
+
+### Design System
+
+All visual styling is centralised in `frontend/src/theme/index.ts` so a palette
+or typography change touches one file rather than every component:
+
+| Export | Purpose |
+|--------|---------|
+| `buildTheme(mode)` | MUI theme factory for `"light"` / `"dark"`; flat bordered cards (elevation 0), 8px radius, no gradients or glow effects. |
+| `BRAND` | Google Material palette — `blue #1A73E8`, `green #1E8E3E`, `amber #F9AB00`, `red #D93025`, `purple #9334E6`, `teal #12A4AF`. |
+| `STATUS_COLOR` / `statusTone(status)` | Maps booking and system statuses (`ACTIVE`, `CONFIRMED`, `WAITING`, `PREEMPTED`, …) to a `{ color, bg }` tone with a neutral fallback. Panels call `statusTone()` instead of hardcoding hex. |
+| `CHART_COLORS` | Ordered series colours for the analytics Recharts views. |
+| `FONT_SANS` / `FONT_MONO` | Roboto and Roboto Mono (Google's font stack), loaded via `index.html`. |
+
+Components consume semantic tokens (`primary.main`, `text.secondary`,
+`action.hover`, `divider`) and the exports above. Theme mode is persisted to
+`localStorage` by `context/ThemeContext.tsx` and defaults to light.
 
 ## Data Model
 

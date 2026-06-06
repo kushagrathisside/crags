@@ -2,27 +2,35 @@
 
 ## Compute Resource Allocation and Governance System (CRAGS)
 
-This directory contains the **frontend application** for CRAGS. The frontend
-provides the user interface through which users log in, view compute systems,
-create resource bookings, manage group quotas, and review audit history.
+This directory contains the **frontend application** for CRAGS. It provides the
+user interface through which users log in, view compute systems, create and
+modify resource bookings, manage group quotas, review the audit trail, and
+inspect usage analytics.
 
-The frontend communicates with the **FastAPI backend** through REST APIs.
+The frontend is a single-page React application that communicates with the
+**FastAPI backend** over REST. In production it is built to static assets and
+served by Nginx, which proxies `/api` to the backend.
 
 ---
 
 # 1. Technology Stack
 
-| Component         | Technology                         |
-| ----------------- | ---------------------------------- |
-| Framework         | React 18                           |
-| Language          | TypeScript                         |
-| Build Tool        | Vite                               |
-| UI Components     | Material UI (MUI)                  |
-| API Communication | Axios (`api/client.ts`)            |
-| Data Fetching     | React Query (`@tanstack/react-query`) |
-| State Management  | Redux Toolkit                      |
-| Linting           | ESLint + TypeScript ESLint         |
-| Package Manager   | npm                                |
+| Component          | Technology                              |
+| ------------------ | --------------------------------------- |
+| Framework          | React 18                                |
+| Language           | TypeScript                              |
+| Build Tool         | Vite                                    |
+| UI Components       | Material UI (MUI) v7                     |
+| Charts             | Recharts                                |
+| Routing            | React Router                            |
+| API Communication  | Axios (`api/client.ts`)                 |
+| Data Fetching      | React Query (`@tanstack/react-query` v5)|
+| App State          | React Query cache + React Context (theme)|
+| Linting            | ESLint + TypeScript ESLint              |
+| Package Manager    | npm                                     |
+
+There is no Redux in the project; server state lives in the React Query cache
+and the only global UI state (theme mode) lives in a React context.
 
 ---
 
@@ -31,94 +39,110 @@ The frontend communicates with the **FastAPI backend** through REST APIs.
 ```
 frontend/
 │
-├── index.html
+├── index.html              # Loads Roboto + Roboto Mono web fonts
 ├── package.json
-├── package-lock.json
 ├── vite.config.ts
 ├── eslint.config.js
 │
-├── public/
-│
 └── src/
-    ├── api/
-    │   ├── api.ts          # Legacy / thin re-export helpers
-    │   ├── client.ts       # Axios instance (baseURL, credentials)
-    │   └── cragsApi.ts     # Typed CRAGS API functions
+    ├── main.tsx            # React root: QueryClient, BrowserRouter, AppThemeProvider
+    ├── App.tsx             # Route table; role-gated routes via RequireRole
+    ├── index.css           # Minimal global styles
     │
-    ├── hooks/              # React Query hooks
-    │   ├── useAuditTrailQuery.ts
-    │   ├── useAvailabilityQuery.ts
+    ├── api/
+    │   ├── client.ts       # Axios instance: baseURL, withCredentials, 401 auto-refresh
+    │   ├── cragsApi.ts     # Typed wrappers for every backend endpoint
+    │   └── api.ts          # Thin legacy re-export helpers
+    │
+    ├── hooks/              # React Query hooks (one concern per file)
+    │   ├── useCurrentUserQuery.ts
+    │   ├── useSystemsQuery.ts
     │   ├── useBookingsQuery.ts
+    │   ├── useAvailabilityQuery.ts
+    │   ├── useAuditTrailQuery.ts
     │   ├── useCreateBooking.ts
     │   ├── useCreateSystem.ts
-    │   ├── useCurrentUserQuery.ts
     │   ├── useLoginMutation.ts
     │   ├── useLogoutMutation.ts
-    │   └── useSystemsQuery.ts
+    │   ├── useSessionExpiry.ts
+    │   └── shared/useDebouncedValue.ts
+    │
+    ├── context/
+    │   └── ThemeContext.tsx    # Light/dark mode, persisted to localStorage
+    │
+    ├── theme/
+    │   └── index.ts            # Centralised design system (see §7)
+    │
+    ├── pages/                  # One file per route
+    │   ├── DashboardPage.tsx
+    │   ├── SchedulerPage.tsx
+    │   ├── SystemsPage.tsx
+    │   ├── MonitoringPage.tsx
+    │   ├── AnalyticsPage.tsx
+    │   ├── TeamPage.tsx
+    │   └── LoginPage.tsx
     │
     ├── components/
-    │   ├── panels/
-    │   │   ├── AuditTrailPanel.tsx
-    │   │   ├── BookingLifecycle.tsx
-    │   │   ├── DecisionPanel.tsx
-    │   │   ├── LoginPanel.tsx
-    │   │   ├── MissionControlDashboard.tsx
-    │   │   ├── SystemInventoryPanel.tsx
-    │   │   └── TeamManagementPanel.tsx
-    │   ├── forms/
-    │   │   ├── BookingRequestForm.tsx
-    │   │   └── SystemRegistrationForm.tsx
-    │   ├── charts/
-    │   │   ├── ResourceConstraintChart.tsx
-    │   │   └── TemporalGantt.tsx
-    │   ├── layout/          # Shell, nav, layout wrappers
-    │   └── shared/          # Reusable UI primitives
+    │   ├── layout/             # AppShell, Sidebar (collapsible), TopBar
+    │   ├── panels/             # MissionControlDashboard, ApprovalQueuePanel,
+    │   │                       #   WaitlistPanel, MaintenanceWindowsPanel,
+    │   │                       #   SystemInventoryPanel, AuditTrailPanel,
+    │   │                       #   BookingLifecycle, BookingActionsPanel, …
+    │   ├── forms/              # BookingRequestForm, SystemRegistrationForm
+    │   ├── charts/             # ResourceConstraintChart, TemporalGantt
+    │   └── ErrorBoundary.tsx
     │
-    ├── pages/
-    │   └── Systems.tsx
-    │
-    ├── types/
-    │   └── crags.ts         # Shared TypeScript types for API shapes
-    │
-    ├── utils/
-    │   └── simulateBooking.ts
-    │
-    ├── App.tsx              # Authenticated app shell and tab composition
-    ├── App.css
-    ├── index.css
-    └── main.tsx
+    ├── lib/                    # explainableError, policy, time helpers
+    ├── utils/                  # simulateBooking (client-side booking preview)
+    └── types/crags.ts         # Shared TypeScript types for all API shapes
 ```
 
 ---
 
-# 3. Key Files
+# 3. Application Shell and Routing
 
-### `src/api/client.ts`
+`main.tsx` mounts the React root with the `QueryClientProvider`,
+`BrowserRouter`, and the theme provider. `App.tsx` defines the route table and
+wraps protected routes in a `RequireRole` guard that checks the current user's
+role before rendering.
 
-Creates the shared Axios instance used by all API calls.
+`components/layout/AppShell.tsx` is the authenticated frame: a collapsible
+`Sidebar`, a `TopBar`, and the routed page content. On logout (or a
+`crags:session-expired` event) it clears the React Query cache and navigates to
+`/login`.
 
-- Sets `baseURL` from `VITE_API_BASE_URL` or falls back to `/api/v1`
-- Enables `withCredentials` so the session cookie is sent automatically
-
-### `src/api/cragsApi.ts`
-
-Typed functions wrapping Axios calls to the CRAGS REST API. Components and
-hooks import from here rather than calling Axios directly.
-
-### `src/hooks/`
-
-React Query hooks wrap `cragsApi.ts` functions. Components call hooks; they
-never import `cragsApi.ts` directly. This keeps cache invalidation and loading
-states centralised.
-
-### `src/App.tsx`
-
-Authenticated application shell. Renders the `MissionControlDashboard` when the
-user is logged in; shows `LoginPanel` otherwise.
+| Route        | Access                          | Page             |
+| ------------ | ------------------------------- | ---------------- |
+| `/`          | Any authenticated               | Dashboard        |
+| `/scheduler` | Any authenticated               | Scheduler        |
+| `/systems`   | RESOURCE_ADMIN, SUPER_ADMIN     | Systems          |
+| `/monitoring`| GROUP_LEAD and above            | Monitoring       |
+| `/analytics` | GROUP_LEAD and above            | Analytics        |
+| `/team`      | RESOURCE_ADMIN, SUPER_ADMIN     | Team             |
+| `/login`     | Public                          | Login            |
 
 ---
 
-# 4. Installation
+# 4. Data Flow
+
+```
+Component → React Query hook (src/hooks) → cragsApi.ts → Axios client → backend
+```
+
+- Components call **hooks**, never `cragsApi.ts` or Axios directly. This keeps
+  caching, loading/error states, and invalidation centralised.
+- `api/client.ts` sets `baseURL` from `VITE_API_BASE_URL` (default `/api/v1`)
+  and enables `withCredentials` so the HTTP-only session cookie is sent.
+- On a `401`, the client's interceptor calls `/auth/refresh` once; if that also
+  fails it dispatches a `crags:session-expired` DOM event, which the shell
+  handles by clearing the cache and redirecting to login.
+
+> Note: because `baseURL` already includes `/api/v1`, endpoint paths in
+> `cragsApi.ts` must **not** repeat that prefix.
+
+---
+
+# 5. Installation
 
 ## Prerequisites
 
@@ -139,61 +163,66 @@ npm install
 
 ---
 
-# 5. Running the Development Server
+# 6. Running, Building, and Linting
 
-Start the backend first, then:
-
-```bash
-npm run dev
-```
-
-The app is available at `http://localhost:5173`. The Vite dev server proxies
-`/api` requests to `http://localhost:8000`.
-
----
-
-# 6. Production Build
+Development server (start the backend first):
 
 ```bash
-npm run build
+npm run dev      # http://localhost:5173, proxies /api to http://localhost:8000
 ```
 
-The build output goes to `frontend/dist`. In Docker, Nginx serves this directory
-and proxies `/api/` to the backend Compose service.
+Production build (also runs `tsc`):
 
----
+```bash
+npm run build    # output to frontend/dist; Nginx serves this in Docker
+```
 
-# 7. Linting and Type Checking
+Linting and type checking:
 
 ```bash
 npm run lint
-npm run build   # also runs tsc
+npx tsc --noEmit
 ```
 
 ---
 
-# 8. Development Workflow
+# 7. Design System
 
-1. Start the full stack: `docker-compose up --build` from the repo root.
-2. Or run backend and frontend separately for faster iteration (see
-   [local-development.md](../docs/local-development.md)).
-3. Keep API functions in `src/api/cragsApi.ts` and expose them through hooks in
-   `src/hooks/`.
-4. Do not embed backend URLs inside components; use the Axios client.
+All colour, typography, and shape live in `src/theme/index.ts`, the single
+source of truth for the UI. To restyle the app, edit this file rather than
+individual components:
+
+- `buildTheme(mode)` — MUI theme factory for light/dark. Flat bordered cards
+  (no elevation), 8px radius, no gradients or glow effects (Google Workspace
+  style).
+- `BRAND` — the Material palette (`blue #1A73E8`, `green #1E8E3E`,
+  `amber #F9AB00`, `red #D93025`, `purple #9334E6`, `teal #12A4AF`).
+- `STATUS_COLOR` / `statusTone(status)` — semantic `{ color, bg }` tones for
+  booking and system statuses; panels call `statusTone()` instead of hardcoding
+  hex values.
+- `CHART_COLORS` — ordered series colours for Recharts views.
+- `FONT_SANS` / `FONT_MONO` — Roboto and Roboto Mono, loaded in `index.html`.
+
+Theme mode is persisted to `localStorage` via `context/ThemeContext.tsx` and
+defaults to light. Components should consume semantic tokens (`primary.main`,
+`text.secondary`, `action.hover`, `divider`) rather than literal colours.
 
 ---
 
-# 9. Contribution Guidelines
+# 8. Contribution Guidelines
 
-1. Maintain consistent TypeScript types in `src/types/crags.ts`.
+1. Keep shared types in `src/types/crags.ts`.
 2. Add new API calls to `src/api/cragsApi.ts` and wrap them in a React Query
    hook under `src/hooks/`.
 3. Do not embed backend URLs or raw Axios calls inside components.
-4. Document new components and hooks with a brief JSDoc comment when their
-   purpose is non-obvious.
+4. Use design-system tokens from `src/theme/index.ts`; do not introduce ad-hoc
+   colours or fonts.
+5. Document non-obvious components and hooks with a brief comment.
 
 ---
 
-# 10. License
+# 9. License
 
 This project is distributed under the license specified in the root repository.
+</content>
+</invoke>
